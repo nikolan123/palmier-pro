@@ -2,14 +2,17 @@ import AppKit
 
 /// Window controller that handles keyboard shortcuts via the responder chain.
 /// Forwards actions to the EditorViewModel owned by VideoProject.
-final class EditorWindowController: NSWindowController {
+final class EditorWindowController: NSWindowController, NSWindowDelegate {
     let editorViewModel: EditorViewModel
     private nonisolated(unsafe) var keyMonitor: Any?
     private nonisolated(unsafe) var mouseMonitor: Any?
+    private var closeConfirmed = false
+    private var closeConfirmationVisible = false
 
     init(editorViewModel: EditorViewModel, window: NSWindow) {
         self.editorViewModel = editorViewModel
         super.init(window: window)
+        window.delegate = self
     }
 
     @available(*, unavailable)
@@ -33,6 +36,30 @@ final class EditorWindowController: NSWindowController {
             self.handlePanelClick(hitView: hitView)
             return event
         }
+    }
+
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        guard GeneralPreferences.confirmBeforeClosingProject, !closeConfirmed else {
+            closeConfirmed = false
+            return true
+        }
+        guard !closeConfirmationVisible else { return false }
+
+        closeConfirmationVisible = true
+        let alert = NSAlert()
+        alert.messageText = "Close this project?"
+        alert.informativeText = "The project window will close."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Close")
+        alert.addButton(withTitle: "Cancel")
+        alert.beginSheetModal(for: sender) { [weak self, weak sender] response in
+            guard let self else { return }
+            self.closeConfirmationVisible = false
+            guard response == .alertFirstButtonReturn, let sender else { return }
+            self.closeConfirmed = true
+            sender.performClose(nil)
+        }
+        return false
     }
 
     private func handleKeyDown(_ event: NSEvent) -> Bool {

@@ -103,7 +103,7 @@ private struct SettingsDetail: View {
                 VStack(alignment: .leading, spacing: AppTheme.Spacing.lg) {
                     switch tab {
                     case .general:
-                        NotificationsPane()
+                        GeneralPane()
                     case .agent:
                         AgentPane()
                     case .storage:

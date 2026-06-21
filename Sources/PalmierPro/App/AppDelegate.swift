@@ -1,6 +1,8 @@
 import AppKit
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var quitConfirmationPending = false
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Activate the app (required when launched from CLI, not a .app bundle)
         NSApp.setActivationPolicy(.regular)
@@ -22,6 +24,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             AppState.shared.showHome()
         }
         return true
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard GeneralPreferences.confirmBeforeClosingProject,
+              let window = AppState.shared.activeProject?.windowControllers.first?.window else {
+            return .terminateNow
+        }
+        guard !quitConfirmationPending else { return .terminateLater }
+
+        quitConfirmationPending = true
+        let alert = NSAlert()
+        alert.messageText = "Quit Palmier Pro?"
+        alert.informativeText = "The open project will close."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Quit")
+        alert.addButton(withTitle: "Cancel")
+        alert.beginSheetModal(for: window) { [weak self, weak sender] response in
+            self?.quitConfirmationPending = false
+            sender?.reply(toApplicationShouldTerminate: response == .alertFirstButtonReturn)
+        }
+        return .terminateLater
     }
 
     @MainActor
