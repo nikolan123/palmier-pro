@@ -78,32 +78,17 @@ final class ExportService {
         outputURL: URL
     ) async {
         if format == .xml {
-            Log.export.notice(
-                "export requested format=xml",
-                telemetry: "Export started",
-                data: ["format": "xml", "tracks": timeline.tracks.count, "clips": timeline.tracks.reduce(0) { $0 + $1.clips.count }]
-            )
+            Log.export.notice("export requested format=xml")
             XMLExporter.export(timeline: timeline, resolver: resolver, outputURL: outputURL)
             progress = 1.0
-            Log.export.notice("export ok format=xml", telemetry: "Export finished", data: ["format": "xml"])
+            Log.export.notice("export ok format=xml")
             return
         }
 
         isExporting = true
         progress = 0
         error = nil
-        Log.export.notice(
-            "export requested format=\(String(describing: format)) resolution=\(resolution.rawValue)",
-            telemetry: "Export started",
-            data: [
-                "format": String(describing: format),
-                "resolution": resolution.rawValue,
-                "tracks": timeline.tracks.count,
-                "clips": timeline.tracks.reduce(0) { $0 + $1.clips.count },
-                "totalFrames": timeline.totalFrames,
-                "fps": timeline.fps
-            ]
-        )
+        Log.export.notice("export requested format=\(String(describing: format)) resolution=\(resolution.rawValue)")
 
         do {
             let session = try await makeExportSession(
@@ -127,37 +112,21 @@ final class ExportService {
             do {
                 try await session.export(to: outputURL, as: fileType)
                 progress = 1.0
-                Log.export.notice(
-                    "export ok",
-                    telemetry: "Export finished",
-                    data: ["format": String(describing: format), "resolution": resolution.rawValue]
-                )
+                Log.export.notice("export ok")
             } catch {
                 if (error as NSError).domain == NSCocoaErrorDomain && (error as NSError).code == NSUserCancelledError {
                     self.error = "Export was cancelled"
-                    Log.export.notice(
-                        "export cancelled",
-                        telemetry: "Export cancelled",
-                        data: ["format": String(describing: format), "resolution": resolution.rawValue]
-                    )
+                    Log.export.notice("export cancelled")
                 } else {
                     self.error = Log.detail(error)
-                    Log.export.error(
-                        "export failed: \(Log.detail(error))",
-                        telemetry: "Export failed",
-                        data: ["format": String(describing: format), "resolution": resolution.rawValue, "error": Log.detail(error)]
-                    )
+                    Log.export.error("export failed: \(Log.detail(error))")
                 }
             }
 
             progressTask.cancel()
         } catch {
             self.error = Log.detail(error)
-            Log.export.error(
-                "export setup failed: \(Log.detail(error))",
-                telemetry: "Export setup failed",
-                data: ["format": String(describing: format), "resolution": resolution.rawValue, "error": Log.detail(error)]
-            )
+            Log.export.error("export setup failed: \(Log.detail(error))")
         }
 
         isExporting = false
@@ -178,16 +147,7 @@ final class ExportService {
         defer { isExporting = false }
 
         do {
-            Log.export.notice(
-                "palmier export start url=\(outputURL.lastPathComponent)",
-                telemetry: "Palmier project export started",
-                data: [
-                    "tracks": timeline.tracks.count,
-                    "clips": timeline.tracks.reduce(0) { $0 + $1.clips.count },
-                    "media": manifest.entries.count,
-                    "generationLogEntries": generationLog.entries.count
-                ]
-            )
+            Log.export.notice("palmier export start url=\(outputURL.lastPathComponent)")
             let report = try await Task.detached(priority: .userInitiated) {
                 try PalmierProjectExporter.export(
                     timeline: timeline, manifest: manifest, generationLog: generationLog,
@@ -196,19 +156,11 @@ final class ExportService {
                 )
             }.value
             progress = 1.0
-            Log.export.notice(
-                "palmier export ok collected=\(report.collected.count) missing=\(report.missing.count)",
-                telemetry: "Palmier project export finished",
-                data: ["collected": report.collected.count, "missing": report.missing.count]
-            )
+            Log.export.notice("palmier export ok collected=\(report.collected.count) missing=\(report.missing.count)")
             return report
         } catch {
             self.error = Log.detail(error)
-            Log.export.error(
-                "palmier export failed: \(Log.detail(error))",
-                telemetry: "Palmier project export failed",
-                data: ["error": Log.detail(error)]
-            )
+            Log.export.error("palmier export failed: \(Log.detail(error))")
             return nil
         }
     }

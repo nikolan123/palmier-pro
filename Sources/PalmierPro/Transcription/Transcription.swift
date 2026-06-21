@@ -106,15 +106,7 @@ enum Transcription {
         } else {
             throw TranscriptionError.unsupportedLocale((preferredLocale ?? Locale.current).identifier(.bcp47))
         }
-        Log.transcription.notice(
-            "transcribe locale=\(locale.identifier(.bcp47))",
-            telemetry: "Transcription started",
-            data: [
-                "locale": locale.identifier(.bcp47),
-                "censorProfanity": censorProfanity,
-                "hasPreferredLocale": preferredLocale != nil
-            ]
-        )
+        Log.transcription.notice("transcribe locale=\(locale.identifier(.bcp47))")
 
         let transcriber = SpeechTranscriber(
             locale: locale,
@@ -124,26 +116,14 @@ enum Transcription {
         )
 
         if let install = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
-            Log.transcription.notice(
-                "install model start locale=\(locale.identifier)",
-                telemetry: "Transcription model install started",
-                data: ["locale": locale.identifier(.bcp47)]
-            )
+            Log.transcription.notice("install model start locale=\(locale.identifier)")
             do {
                 try await install.downloadAndInstall()
             } catch {
-                Log.transcription.warning(
-                    "install model failed locale=\(locale.identifier) error=\(error.localizedDescription)",
-                    telemetry: "Transcription model install failed",
-                    data: ["locale": locale.identifier(.bcp47), "error": error.localizedDescription]
-                )
+                Log.transcription.warning("install model failed locale=\(locale.identifier) error=\(error.localizedDescription)")
                 throw TranscriptionError.modelInstallFailed(error.localizedDescription)
             }
-            Log.transcription.notice(
-                "install model ok locale=\(locale.identifier)",
-                telemetry: "Transcription model install finished",
-                data: ["locale": locale.identifier(.bcp47)]
-            )
+            Log.transcription.notice("install model ok locale=\(locale.identifier)")
         }
 
         let audioFile: AVAudioFile
@@ -161,7 +141,7 @@ enum Transcription {
             return acc
         }
 
-        Log.transcription.notice("analyze start file=\(fileURL.lastPathComponent)", telemetry: "Transcription analysis started")
+        Log.transcription.notice("analyze start file=\(fileURL.lastPathComponent)")
         do {
             if let lastSampleTime = try await analyzer.analyzeSequence(from: audioFile) {
                 try await analyzer.finalizeAndFinish(through: lastSampleTime)
@@ -170,11 +150,7 @@ enum Transcription {
             }
         } catch {
             resultsTask.cancel()
-            Log.transcription.warning(
-                "analyze failed error=\(error.localizedDescription)",
-                telemetry: "Transcription analysis failed",
-                data: ["error": error.localizedDescription]
-            )
+            Log.transcription.warning("analyze failed error=\(error.localizedDescription)")
             throw TranscriptionError.analysisFailed(error.localizedDescription)
         }
 
@@ -186,16 +162,7 @@ enum Transcription {
         }
 
         let decoded = decodeResults(collected, locale: locale)
-        Log.transcription.notice(
-            "ok textChars=\(decoded.text.count) words=\(decoded.words.count) lang=\(decoded.language ?? "?")",
-            telemetry: "Transcription finished",
-            data: [
-                "textChars": decoded.text.count,
-                "words": decoded.words.count,
-                "segments": decoded.segments.count,
-                "language": decoded.language ?? "unknown"
-            ]
-        )
+        Log.transcription.notice("ok textChars=\(decoded.text.count) words=\(decoded.words.count) lang=\(decoded.language ?? "?")")
         return decoded
     }
 
@@ -232,11 +199,7 @@ enum Transcription {
 
         let outURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("palmier-stt-\(UUID().uuidString).caf")
-        Log.transcription.notice(
-            "extract start video=\(videoURL.lastPathComponent)",
-            telemetry: "Transcription audio extraction started",
-            data: ["hasRange": range != nil, "rangeSeconds": range.map { $0.upperBound - $0.lowerBound } ?? 0]
-        )
+        Log.transcription.notice("extract start video=\(videoURL.lastPathComponent)")
 
         guard reader.startReading() else {
             throw TranscriptionError.audioExtractionFailed(reader.error?.localizedDescription ?? "Reader could not start")
@@ -270,12 +233,7 @@ enum Transcription {
         guard audioFile != nil else {
             throw TranscriptionError.audioExtractionFailed("No audio samples in \(videoURL.lastPathComponent)")
         }
-        let bytes = (try? FileManager.default.attributesOfItem(atPath: outURL.path)[.size] as? Int) ?? 0
-        Log.transcription.notice(
-            "extract ok bytes=\(bytes) out=\(outURL.lastPathComponent)",
-            telemetry: "Transcription audio extraction finished",
-            data: ["bytes": bytes, "hasRange": range != nil]
-        )
+        Log.transcription.notice("extract ok out=\(outURL.lastPathComponent)")
         return outURL
     }
 

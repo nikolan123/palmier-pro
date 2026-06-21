@@ -1,7 +1,6 @@
 import AppKit
 
 Log.bootstrap()
-Telemetry.start()
 BundledFonts.register()
 AccountService.shared.configure()
 ModelCatalog.shared.configure()

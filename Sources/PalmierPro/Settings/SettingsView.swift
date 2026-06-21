@@ -119,7 +119,6 @@ private struct SettingsDetail: View {
                         AccountPane()
                     case .general:
                         NotificationsPane()
-                        PrivacyPane()
                     case .models:
                         ModelsPane()
                     case .agent:

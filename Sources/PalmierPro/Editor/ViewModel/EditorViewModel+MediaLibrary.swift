@@ -24,17 +24,7 @@ extension EditorViewModel {
         }
         let entry = asset.toManifestEntry(projectURL: projectURL)
         mediaManifest.entries.append(entry)
-        Log.project.notice(
-            "media imported asset=\(asset.id.prefix(8)) type=\(asset.type.rawValue)",
-            telemetry: "Media asset imported",
-            data: [
-                "assetId": Telemetry.shortId(asset.id),
-                "type": asset.type.rawValue,
-                "skipAppend": skipAppend,
-                "media": mediaAssets.count,
-                "manifestEntries": mediaManifest.entries.count
-            ]
-        )
+        Log.project.notice("media imported asset=\(asset.id.prefix(8)) type=\(asset.type.rawValue)")
     }
 
     /// Resolve a drag pasteboard payload (one `palmier-asset://<id>` per line).
@@ -417,11 +407,7 @@ extension EditorViewModel {
     }
 
     func finalizeImportedAsset(_ asset: MediaAsset) async {
-        Log.project.notice(
-            "media finalize start asset=\(asset.id.prefix(8)) type=\(asset.type.rawValue)",
-            telemetry: "Media asset finalize started",
-            data: ["assetId": Telemetry.shortId(asset.id), "type": asset.type.rawValue]
-        )
+        Log.project.notice("media finalize start asset=\(asset.id.prefix(8)) type=\(asset.type.rawValue)")
         await asset.loadMetadata()
         updateManifestMetadata(for: asset)
         searchIndex.schedule(asset)
@@ -436,19 +422,7 @@ extension EditorViewModel {
         case .text, .lottie:
             break
         }
-        Log.project.notice(
-            "media finalize ok asset=\(asset.id.prefix(8)) type=\(asset.type.rawValue)",
-            telemetry: "Media asset finalize finished",
-            data: [
-                "assetId": Telemetry.shortId(asset.id),
-                "type": asset.type.rawValue,
-                "duration": asset.duration,
-                "width": asset.sourceWidth ?? 0,
-                "height": asset.sourceHeight ?? 0,
-                "fps": asset.sourceFPS ?? 0,
-                "hasAudio": asset.hasAudio
-            ]
-        )
+        Log.project.notice("media finalize ok asset=\(asset.id.prefix(8)) type=\(asset.type.rawValue)")
     }
 
     struct TextClipSpec {

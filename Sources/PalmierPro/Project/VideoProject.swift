@@ -51,16 +51,7 @@ final class VideoProject: NSDocument {
         if let logData = fileWrapper.fileWrappers?[Project.generationLogFilename]?.regularFileContents {
             loadedGenerationLog = try? JSONDecoder().decode(GenerationLog.self, from: logData)
         }
-        Log.project.notice(
-            "read ok tracks=\(self.loadedTimeline?.tracks.count ?? 0)",
-            telemetry: "Project read",
-            data: [
-                "tracks": loadedTimeline?.tracks.count ?? 0,
-                "clips": loadedTimeline?.tracks.reduce(0) { $0 + $1.clips.count } ?? 0,
-                "media": loadedManifest?.entries.count ?? 0,
-                "hasGenerationLog": loadedGenerationLog != nil
-            ]
-        )
+        Log.project.notice("read ok tracks=\(self.loadedTimeline?.tracks.count ?? 0)")
     }
 
     override func save(to url: URL, ofType typeName: String, for saveOperation: NSDocument.SaveOperationType, completionHandler: @escaping (Error?) -> Void) {
@@ -246,12 +237,6 @@ final class VideoProject: NSDocument {
             editorViewModel.seedGenerationLogFromAssets()
         }
         editorViewModel.searchIndex.projectOpened()
-        editorViewModel.updateTelemetryContext()
-        Telemetry.breadcrumb(
-            "Project opened",
-            category: "project",
-            data: editorViewModel.telemetrySnapshot()
-        )
     }
 
     // MARK: - Thumbnail
@@ -331,11 +316,7 @@ final class VideoProject: NSDocument {
             }
             Task { await asset.loadMetadata() }
         }
-        Log.project.notice(
-            "restore ok restored=\(restored) missing=\(missing)",
-            telemetry: "Media restored",
-            data: ["restored": restored, "missing": missing, "manifestEntries": editorViewModel.mediaManifest.entries.count]
-        )
+        Log.project.notice("restore ok restored=\(restored) missing=\(missing)")
     }
 }
 
