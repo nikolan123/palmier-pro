@@ -24,6 +24,11 @@ struct ToolbarView: View {
             Divider()
                 .frame(height: AppTheme.Spacing.xl)
 
+            snappingButton
+
+            Divider()
+                .frame(height: AppTheme.Spacing.xl)
+
             // Split, trim buttons
             HStack(spacing: AppTheme.Spacing.md) {
                 toolbarButton("square.split.2x1", help: "Split at Playhead (⌘K)", action: editor.splitAtPlayhead)
@@ -95,6 +100,21 @@ struct ToolbarView: View {
         }
         .buttonStyle(.plain)
         .help(help)
+    }
+
+    private var snappingButton: some View {
+        let isActive = editor.timelineSnappingEnabled
+        return Button { editor.timelineSnappingEnabled.toggle() } label: {
+            Image(systemName: "arrow.left.and.right.righttriangle.left.righttriangle.right")
+                .font(.system(size: AppTheme.FontSize.md))
+                .foregroundStyle(isActive ? AppTheme.Text.primaryColor : AppTheme.Text.tertiaryColor)
+                .frame(width: AppTheme.IconSize.md, height: AppTheme.IconSize.md)
+                .hoverHighlight(isActive: isActive)
+        }
+        .buttonStyle(.plain)
+        .help(isActive ? "Disable Snapping" : "Enable Snapping")
+        .accessibilityLabel("Timeline Snapping")
+        .accessibilityValue(isActive ? "On" : "Off")
     }
 
     private func textGlyphButton(_ glyph: String, help: String, action: @escaping () -> Void) -> some View {

@@ -943,6 +943,7 @@ final class TimelineView: NSView {
             tracks: editor.timeline.tracks
         )
         if let snap = SnapEngine.findSnap(
+            enabled: editor.timelineSnappingEnabled,
             position: candidate,
             probeOffsets: [0, totalDur],
             targets: targets,

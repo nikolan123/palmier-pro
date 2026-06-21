@@ -64,6 +64,11 @@ final class EditorViewModel {
     var timelineRenderRevision: Int = 0
     var isScrubbing: Bool = false
     var toolMode: ToolMode = .pointer
+    var timelineSnappingEnabled: Bool = {
+        UserDefaults.standard.object(forKey: "timelineSnappingEnabled") as? Bool ?? true
+    }() {
+        didSet { UserDefaults.standard.set(timelineSnappingEnabled, forKey: "timelineSnappingEnabled") }
+    }
     var showExportDialog: Bool = false
     /// Clip ids currently awaiting an asynchronous replacement.
     var pendingReplacements: Set<String> = []

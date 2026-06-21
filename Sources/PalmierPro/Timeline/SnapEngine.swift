@@ -52,6 +52,7 @@ enum SnapEngine {
     /// Snap position(s) to nearest target, with sticky behavior and playhead priority.
     /// Tests one or more probe positions (e.g., clip start and end) against all targets.
     static func findSnap(
+        enabled: Bool = true,
         position: Int,
         probeOffsets: [Int] = [0],
         targets: [SnapTarget],
@@ -59,6 +60,10 @@ enum SnapEngine {
         baseThreshold: Double,
         pixelsPerFrame: Double
     ) -> SnapResult? {
+        guard enabled else {
+            state = SnapState()
+            return nil
+        }
         let baseFrameThreshold = baseThreshold / pixelsPerFrame
 
         // Sticky: stay snapped until moved 2.5x threshold away

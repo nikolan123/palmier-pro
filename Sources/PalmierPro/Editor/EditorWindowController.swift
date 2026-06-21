@@ -57,7 +57,9 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
             self.closeConfirmationVisible = false
             guard response == .alertFirstButtonReturn, let sender else { return }
             self.closeConfirmed = true
-            sender.performClose(nil)
+            DispatchQueue.main.async {
+                sender.performClose(nil)
+            }
         }
         return false
     }

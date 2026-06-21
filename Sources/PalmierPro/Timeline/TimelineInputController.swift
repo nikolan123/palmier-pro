@@ -217,6 +217,7 @@ final class TimelineInputController {
             )
             let rangeEndFrame: Int
             if let snap = SnapEngine.findSnap(
+                enabled: editor.timelineSnappingEnabled,
                 position: frame,
                 targets: targets,
                 state: &snapState,
@@ -253,6 +254,7 @@ final class TimelineInputController {
             }
 
             if let snap = SnapEngine.findSnap(
+                enabled: editor.timelineSnappingEnabled,
                 position: candidateFrame,
                 probeOffsets: probeOffsets,
                 targets: targets,
@@ -288,6 +290,7 @@ final class TimelineInputController {
             )
             let snappedStart: Int
             if let snap = SnapEngine.findSnap(
+                enabled: editor.timelineSnappingEnabled,
                 position: candidateStart,
                 targets: targets,
                 state: &snapState,
@@ -317,6 +320,7 @@ final class TimelineInputController {
             )
             let snappedEnd: Int
             if let snap = SnapEngine.findSnap(
+                enabled: editor.timelineSnappingEnabled,
                 position: candidateEnd,
                 targets: targets,
                 state: &snapState,
@@ -516,6 +520,7 @@ final class TimelineInputController {
                 includePlayhead: true
             )
             if let snap = SnapEngine.findSnap(
+                enabled: editor.timelineSnappingEnabled,
                 position: candidate,
                 targets: targets,
                 state: &razorSnapState,
