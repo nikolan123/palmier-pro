@@ -16,9 +16,6 @@ struct NotificationsPane: View {
                     AppNotifications.configure()
                 }
             }
-
-            Divider()
-                .overlay(AppTheme.Border.subtleColor)
         }
     }
 }

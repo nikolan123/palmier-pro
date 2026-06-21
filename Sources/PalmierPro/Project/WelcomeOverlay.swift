@@ -24,7 +24,7 @@ struct WelcomeOverlay: View {
                     .font(.system(size: AppTheme.FontSize.title2, weight: .light))
                     .tracking(AppTheme.Tracking.tight)
                     .foregroundStyle(AppTheme.Text.primaryColor)
-                Text("A local video editor with MCP and optional Anthropic chat.")
+                Text("A lightweight video editor with MCP.")
                     .font(.system(size: AppTheme.FontSize.smMd))
                     .foregroundStyle(AppTheme.Text.secondaryColor)
                     .fixedSize(horizontal: false, vertical: true)
