@@ -18,7 +18,6 @@ struct AssetThumbnailView: View {
             }
             .aspectRatio(16.0 / 9.0, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.sm))
-            .overlay(alignment: .topLeading) { thumbnailBadges }
             .overlay(alignment: .topTrailing) { hoverActions }
             .overlay(alignment: .bottomTrailing) { durationOverlay }
             .overlay(
@@ -180,16 +179,6 @@ struct AssetThumbnailView: View {
     }
 
     @ViewBuilder
-    private var thumbnailBadges: some View {
-        HStack(spacing: AppTheme.Spacing.xs) {
-            if asset.isGenerated && !asset.isGenerating {
-                sourceBadge
-            }
-        }
-        .padding(AppTheme.Spacing.xs)
-    }
-
-    @ViewBuilder
     private var durationOverlay: some View {
         if showsDurationBadge {
             durationBadge.padding(AppTheme.Spacing.xs)
@@ -212,15 +201,6 @@ struct AssetThumbnailView: View {
             .transition(.opacity)
             .help("Add to chat")
         }
-    }
-
-    private var sourceBadge: some View {
-        Text("AI")
-            .font(.system(size: AppTheme.FontSize.xxs, weight: .semibold))
-            .foregroundStyle(AppTheme.aiGradient)
-            .padding(.horizontal, AppTheme.Spacing.sm)
-            .padding(.vertical, AppTheme.Spacing.xxs)
-            .background(Color.black.opacity(AppTheme.Opacity.prominent), in: .capsule)
     }
 
     private var durationBadge: some View {

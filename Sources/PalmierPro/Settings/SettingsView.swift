@@ -165,7 +165,7 @@ final class SettingsWindowController: NSWindowController {
         window.isOpaque = false
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
-        window.isMovableByWindowBackground = true
+        window.isMovableByWindowBackground = false
         window.styleMask.insert(.fullSizeContentView)
         window.center()
         self.hosting = hosting

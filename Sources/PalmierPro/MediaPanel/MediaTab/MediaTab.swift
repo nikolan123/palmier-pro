@@ -7,7 +7,6 @@ struct MediaTab: View {
     // Toolbar state
     @State var sortMode: SortMode = .dateAdded
     @State var filterTypes: Set<ClipType> = []
-    @State var filterAI = false
     @State var searchQuery: String = ""
     @State var thumbnailSize: Double = 80
     @State var viewMode: ViewMode = .folder
@@ -377,10 +376,6 @@ struct MediaTab: View {
                 }
             }
             Divider()
-            Button { filterAI.toggle() } label: {
-                Label("AI Generated", systemImage: filterAI ? "checkmark" : "")
-            }
-            Divider()
             Button("Clear Filters", action: clearFilters)
         }
     }
@@ -432,7 +427,7 @@ struct MediaTab: View {
     }
 
     private var hasActiveFilters: Bool {
-        !filterTypes.isEmpty || filterAI
+        !filterTypes.isEmpty
     }
 
     private func toggleFilter(_ type: ClipType) {
@@ -445,7 +440,6 @@ struct MediaTab: View {
 
     private func clearFilters() {
         filterTypes.removeAll()
-        filterAI = false
     }
 
     var assetsInCurrentFolder: [MediaAsset] {
@@ -461,10 +455,9 @@ struct MediaTab: View {
 
     private func passesFilters(_ asset: MediaAsset) -> Bool {
         let typeOk = filterTypes.isEmpty || filterTypes.contains(asset.type)
-        let aiOk = !filterAI || asset.isGenerated
         let q = searchQuery.trimmingCharacters(in: .whitespaces)
         let nameOk = q.isEmpty || asset.name.localizedCaseInsensitiveContains(q)
-        return typeOk && aiOk && nameOk
+        return typeOk && nameOk
     }
 
     func sortAndFilter(_ assets: [MediaAsset]) -> [MediaAsset] {

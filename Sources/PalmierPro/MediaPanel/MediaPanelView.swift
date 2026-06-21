@@ -4,7 +4,6 @@ import SwiftUI
 struct MediaPanelView: View {
     @Environment(EditorViewModel.self) private var editor
     @State private var panelTab: PanelTab = .media
-    @State private var hoveredTab: PanelTab?
 
     enum PanelTab: String, CaseIterable {
         case media = "Media", captions = "Captions"
@@ -37,17 +36,6 @@ struct MediaPanelView: View {
         .onChange(of: editor.mediaPanelShowMediaTabTick) { _, _ in
             withAnimation(.easeInOut(duration: AppTheme.Anim.transition)) { panelTab = .media }
         }
-        .overlay(alignment: .topLeading) {
-            if let hoveredTab {
-                hoverLabel(hoveredTab.rawValue)
-                    .id(hoveredTab)
-                    .offset(
-                        x: AppTheme.MediaPanel.tabRailWidth + AppTheme.Spacing.xs,
-                        y: hoverLabelOffsetY(for: hoveredTab)
-                    )
-                    .transition(.opacity.combined(with: .move(edge: .leading)))
-            }
-        }
     }
 
     private var panelTabRail: some View {
@@ -77,7 +65,6 @@ struct MediaPanelView: View {
 
     private func panelTabButton(_ tab: PanelTab) -> some View {
         let selected = panelTab == tab
-        let hovered = hoveredTab == tab
         return Button {
             withAnimation(.easeInOut(duration: AppTheme.Anim.transition)) { panelTab = tab }
         } label: {
@@ -97,37 +84,7 @@ struct MediaPanelView: View {
         }
         .buttonStyle(.plain)
         .focusable(false)
-        .onHover { hovering in
-            withAnimation(.easeOut(duration: AppTheme.Anim.hover)) {
-                hoveredTab = hovering ? tab : (hoveredTab == tab ? nil : hoveredTab)
-            }
-        }
+        .help(tab.rawValue)
         .accessibilityLabel(tab.rawValue)
-        .zIndex(hovered ? 1 : 0)
-    }
-
-    private func hoverLabel(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: AppTheme.FontSize.xs, weight: AppTheme.FontWeight.medium))
-            .foregroundStyle(AppTheme.Text.primaryColor)
-            .lineLimit(1)
-            .fixedSize(horizontal: true, vertical: false)
-            .padding(.horizontal, AppTheme.Spacing.smMd)
-            .frame(height: AppTheme.IconSize.lg)
-            .background(
-                Capsule(style: .continuous)
-                    .fill(AppTheme.Background.prominentColor)
-            )
-            .overlay(
-                Capsule(style: .continuous)
-                    .strokeBorder(AppTheme.Border.primaryColor, lineWidth: AppTheme.BorderWidth.thin)
-            )
-            .shadow(AppTheme.Shadow.sm)
-            .allowsHitTesting(false)
-    }
-
-    private func hoverLabelOffsetY(for tab: PanelTab) -> CGFloat {
-        let index = CGFloat(PanelTab.allCases.firstIndex(of: tab) ?? 0)
-        return AppTheme.Spacing.sm + index * (AppTheme.IconSize.lg + AppTheme.Spacing.xs)
     }
 }
