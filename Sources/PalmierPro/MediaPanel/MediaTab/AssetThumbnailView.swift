@@ -86,7 +86,6 @@ struct AssetThumbnailView: View {
                 Divider()
             }
             Button("Rename") { beginRename() }
-            AIEditMenu(asset: asset)
             Divider()
         }
         Button("Reveal in Finder") { revealInFinder(ids: ids) }

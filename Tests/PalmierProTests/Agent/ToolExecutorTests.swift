@@ -76,7 +76,6 @@ struct ToolExecutorSmokeTests {
         #expect(json?["fps"] as? Int == 30)
         #expect(json?["tracks"] is [Any])
         #expect(json?["currentFrame"] is Int)
-        #expect(json?["canGenerate"] is Bool)
     }
 }
 
@@ -100,14 +99,6 @@ struct ToolExecutorReadOnlyTests {
         #expect(tracks?[0]["label"] as? String == "V1")
         #expect(tracks?[1]["label"] as? String == "A1")
         #expect(json?["currentFrame"] as? Int == 42)
-    }
-
-    @Test func getTimelineExposesCanGenerateFromAccountService() async throws {
-        // AccountService.shared starts unpaid in test environment.
-        let h = ToolHarness()
-        let json = try await h.runOK("get_timeline") as? [String: Any]
-        // We don't assert the value (depends on env), only that the key is present and Bool.
-        #expect(json?["canGenerate"] is Bool)
     }
 
     @Test func getTimelineRoundsFloatingPointNumbersToThreeDecimalPlaces() async throws {
@@ -360,9 +351,7 @@ struct ToolExecutorReadOnlyTests {
                 sourceHeight: 1080,
                 sourceFPS: 29.97002997,
                 hasAudio: true,
-                folderId: nil,
-                cachedRemoteURL: nil,
-                cachedRemoteURLExpiresAt: nil
+                folderId: nil
             ),
         ]
 
@@ -406,34 +395,6 @@ struct ToolExecutorReadOnlyTests {
         #expect(root?["parentFolderId"] == nil)
     }
 
-    // MARK: - list_models
-
-    /// ModelCatalog populates from Convex over the network — empty in tests. These verify
-    /// shape and filter contract regardless of whether the catalog has any entries.
-
-    @Test func listModelsReturnsWrappedShape() async throws {
-        let h = ToolHarness()
-        let body = try await h.runOK("list_models") as? [String: Any]
-        #expect(body?["models"] is [Any])
-        #expect(body?["loaded"] is Bool)
-    }
-
-    @Test func listModelsReportsCatalogNotLoadedInTestEnvironment() async throws {
-        // No Convex connection → catalog stays unloaded. Agents must use this to disambiguate
-        // empty results from "catalog not synced yet".
-        let h = ToolHarness()
-        let body = try await h.runOK("list_models") as? [String: Any]
-        #expect(body?["loaded"] as? Bool == false)
-    }
-
-    @Test func listModelsFilterIsRespectedForAllEntries() async throws {
-        let h = ToolHarness()
-        let body = try await h.runOK("list_models", args: ["type": "image"]) as? [String: Any]
-        let models = body?["models"] as? [[String: Any]]
-        for m in models ?? [] {
-            #expect(m["type"] as? String == "image")
-        }
-    }
 }
 
 @Suite("ToolExecutor — clip handlers")

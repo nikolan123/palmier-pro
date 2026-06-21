@@ -43,7 +43,6 @@ DMG="$ROOT/.build/PalmierPro.dmg"
 echo "==> Building ($CONFIG)"
 swift build -c "$CONFIG"
 BIN="$(swift build -c "$CONFIG" --show-bin-path)/PalmierPro"
-SPARKLE_FW="$ROOT/.build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
 
 echo "==> Assembling $APP"
 rm -rf "$APP"
@@ -51,22 +50,7 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Framewor
 cp "$BIN" "$APP/Contents/MacOS/PalmierPro"
 cp "$RESOURCES/Info.plist" "$APP/Contents/Info.plist"
 
-inject_plist() {
-  local key="$1" value="$2"
-  if [ -z "$value" ]; then
-    echo "!! $key not set in $ENV_FILE — app will fatalError on launch" >&2
-    return
-  fi
-  /usr/libexec/PlistBuddy -c "Delete :$key" "$APP/Contents/Info.plist" 2>/dev/null || true
-  /usr/libexec/PlistBuddy -c "Add :$key string $value" "$APP/Contents/Info.plist"
-}
-
-echo "==> Injecting backend config into Info.plist"
-inject_plist PalmierClerkPublishableKey "${CLERK_PUBLISHABLE_KEY:-}"
-inject_plist PalmierConvexDeploymentURL "${CONVEX_DEPLOYMENT_URL:-}"
-inject_plist PalmierConvexHttpURL "${CONVEX_HTTP_URL:-}"
 cp "$RESOURCES/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
-cp -R "$SPARKLE_FW" "$APP/Contents/Frameworks/Sparkle.framework"
 
 # Flatten SwiftPM's resource bundle into the app's Resources tree.
 RES_BUNDLE="$(dirname "$BIN")/PalmierPro_PalmierPro.bundle"
@@ -85,14 +69,6 @@ fi
 if [ -d "$RES_BUNDLE/Images" ]; then
   cp -R "$RES_BUNDLE/Images" "$APP/Contents/Resources/"
 fi
-if [ -d "$RES_BUNDLE/Changelog" ]; then
-  cp -R "$RES_BUNDLE/Changelog" "$APP/Contents/Resources/"
-else
-  echo "!! missing Changelog/ in SwiftPM resource bundle at $RES_BUNDLE" >&2
-  exit 1
-fi
-
-install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP/Contents/MacOS/PalmierPro"
 touch "$APP"
 
 if [ "$MODE" = "fast" ]; then
@@ -114,24 +90,6 @@ if [ "$MODE" = "dev" ]; then
   echo "==> Done: $APP (ad-hoc signed)"
   exit 0
 fi
-
-echo "==> Codesigning nested Sparkle helpers"
-SPARKLE_CURRENT="$APP/Contents/Frameworks/Sparkle.framework/Versions/Current"
-for helper in \
-    "$SPARKLE_CURRENT/Autoupdate" \
-    "$SPARKLE_CURRENT/Updater.app/Contents/MacOS/Updater" \
-    "$SPARKLE_CURRENT/Updater.app" \
-    "$SPARKLE_CURRENT/XPCServices/Downloader.xpc/Contents/MacOS/Downloader" \
-    "$SPARKLE_CURRENT/XPCServices/Downloader.xpc" \
-    "$SPARKLE_CURRENT/XPCServices/Installer.xpc/Contents/MacOS/Installer" \
-    "$SPARKLE_CURRENT/XPCServices/Installer.xpc"; do
-  [ -e "$helper" ] && codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" "$helper"
-done
-
-echo "==> Codesigning Sparkle framework"
-codesign --force --options runtime --timestamp \
-  --sign "$SIGNING_IDENTITY" \
-  "$APP/Contents/Frameworks/Sparkle.framework"
 
 echo "==> Codesigning main app"
 codesign --force --options runtime --timestamp \
@@ -181,21 +139,7 @@ xcrun notarytool submit "$DMG" \
 echo "==> Stapling DMG"
 xcrun stapler staple "$DMG"
 
-upload_dsyms
-
-echo "==> Signing DMG with Sparkle EdDSA key"
-SPARKLE_SIG="$("$ROOT/.build/artifacts/sparkle/Sparkle/bin/sign_update" "$DMG")"
-
 echo ""
 echo "==> Done"
 echo "   App: $APP"
 echo "   DMG: $DMG"
-echo ""
-echo "Sparkle signature for appcast entry:"
-echo "  $SPARKLE_SIG"
-echo ""
-echo "Add an <item> to appcast.xml with:"
-echo "  - version, shortVersionString from Info.plist"
-echo "  - url pointing at the GitHub Release download"
-echo "  - length=$(stat -f%z "$DMG")"
-echo "  - the sparkle:edSignature from above"

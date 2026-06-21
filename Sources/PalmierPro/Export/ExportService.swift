@@ -137,7 +137,6 @@ final class ExportService {
     func exportPalmierProject(
         timeline: Timeline,
         manifest: MediaManifest,
-        generationLog: GenerationLog,
         sourceProjectURL: URL?,
         outputURL: URL
     ) async -> PalmierProjectExporter.Report? {
@@ -150,7 +149,7 @@ final class ExportService {
             Log.export.notice("palmier export start url=\(outputURL.lastPathComponent)")
             let report = try await Task.detached(priority: .userInitiated) {
                 try PalmierProjectExporter.export(
-                    timeline: timeline, manifest: manifest, generationLog: generationLog,
+                    timeline: timeline, manifest: manifest,
                     sourceProjectURL: sourceProjectURL, to: outputURL,
                     progress: { p in Task { @MainActor in self.progress = p } }
                 )

@@ -5,8 +5,6 @@ import SwiftUI
 struct WelcomeOverlay: View {
     let onDismiss: () -> Void
 
-    @Bindable private var account = AccountService.shared
-    @State private var startingTutorial = false
     private static let hero: NSImage? = loadHero()
 
     var body: some View {
@@ -26,7 +24,7 @@ struct WelcomeOverlay: View {
                     .font(.system(size: AppTheme.FontSize.title2, weight: .light))
                     .tracking(AppTheme.Tracking.tight)
                     .foregroundStyle(AppTheme.Text.primaryColor)
-                Text("A video editor built for AI. Generate, and edit all in one place.")
+                Text("A local video editor with MCP and optional Anthropic chat.")
                     .font(.system(size: AppTheme.FontSize.smMd))
                     .foregroundStyle(AppTheme.Text.secondaryColor)
                     .fixedSize(horizontal: false, vertical: true)
@@ -37,19 +35,9 @@ struct WelcomeOverlay: View {
                     .buttonStyle(.capsule(.secondary, size: .regular))
                     .keyboardShortcut(.cancelAction)
                 Spacer()
-                Button { startTutorial() } label: {
-                    if startingTutorial {
-                        HStack(spacing: AppTheme.Spacing.xs) {
-                            ProgressView().controlSize(.small)
-                            Text("Loading…")
-                        }
-                    } else {
-                        Text("Watch Tutorial")
-                    }
-                }
-                .buttonStyle(.capsule(.secondary, size: .regular))
-                .disabled(startingTutorial)
-                signInButton
+                Button("Get started") { onDismiss() }
+                    .buttonStyle(.capsule(.prominent, size: .regular))
+                    .keyboardShortcut(.defaultAction)
             }
             .padding(.top, AppTheme.Spacing.lg)
         }
@@ -63,37 +51,6 @@ struct WelcomeOverlay: View {
                 )
         )
         .shadow(AppTheme.Shadow.lg)
-    }
-
-    @ViewBuilder
-    private var signInButton: some View {
-        if account.aiAllowed || account.isMisconfigured {
-            Button("Get started") { onDismiss() }
-                .buttonStyle(.capsule(.prominent, size: .regular))
-                .keyboardShortcut(.defaultAction)
-        } else {
-            Button("Sign In") { Task { await account.signInWithGoogle() } }
-                .buttonStyle(.capsule(.prominent, size: .regular))
-                .keyboardShortcut(.defaultAction)
-        }
-    }
-
-    /// Open the first sample (downloading if needed); it auto-starts the tutorial.
-    private func startTutorial() {
-        startingTutorial = true
-        Task {
-            defer { startingTutorial = false }
-            guard let sample = try? await SampleProjectService.shared.fetchSamples().first else {
-                onDismiss()   // nothing to open
-                return
-            }
-            do {
-                try await AppState.shared.openSample(slug: sample.slug, startTutorial: true)
-                onDismiss()
-            } catch {
-                // Leave the welcome up so the user can retry or skip.
-            }
-        }
     }
 
     @ViewBuilder

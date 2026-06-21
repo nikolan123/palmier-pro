@@ -8,16 +8,9 @@ struct InspectorView: View {
         case text = "Text"
         case video = "Video"
         case audio = "Audio"
-        case ai = "AI Edit"
-    }
-
-    enum AssetTab: String, Hashable {
-        case details = "Details"
-        case ai = "AI Edit"
     }
 
     @State private var preferredTab: ClipTab = .video
-    @State private var preferredAssetTab: AssetTab = .details
     @State private var transformExpanded = true
 
     private var headerTitle: String {
@@ -178,31 +171,13 @@ struct InspectorView: View {
         if isSingleText { tabs.append(.text) }
         if !nonText.isEmpty { tabs.append(.video) }
         if !audios.isEmpty { tabs.append(.audio) }
-        if aiEditEligible && !AccountService.shared.isMisconfigured { tabs.append(.ai) }
         return tabs
-    }
-
-    /// True when the selection resolves to a single AI-editable visual clip.
-    /// A linked video+audio pair counts as one
-    private var aiEditEligible: Bool {
-        let visuals = selectedVisualClips
-        let audios = selectedAudioClips
-        guard visuals.count == 1, resolvedClipAsset != nil else { return false }
-        if audios.isEmpty { return true }
-        let partners = Set(editor.linkedPartnerIds(of: visuals[0].id))
-        return audios.allSatisfy { partners.contains($0.id) }
     }
 
     /// Tab the view actually renders (preferred if valid, else first available).
     private var activeTab: ClipTab? {
         let tabs = availableTabs
         return tabs.contains(preferredTab) ? preferredTab : tabs.first
-    }
-
-    /// The visual-or-image MediaAsset backing the currently selected visual clip.
-    private var resolvedClipAsset: MediaAsset? {
-        guard let clip = selectedVisualClip, clip.mediaType.isVisual else { return nil }
-        return editor.mediaAssets.first { $0.id == clip.mediaRef }
     }
 
     private var nonTextVisualClips: [Clip] {
@@ -217,24 +192,20 @@ struct InspectorView: View {
                 tabBar(tabs)
             }
             Group {
-                if activeTab == .ai, let asset = resolvedClipAsset {
-                    AIEditTab(asset: asset, clipId: selectedVisualClip?.id)
-                } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.lg) {
-                            switch activeTab {
-                            case .text:
-                                if let v = selectedVisualClip, v.mediaType == .text { TextTab(clip: v) }
-                            case .video:
-                                videoTabContent()
-                            case .audio:
-                                audioTabContent()
-                            case .ai, .none:
-                                EmptyView()
-                            }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.lg) {
+                        switch activeTab {
+                        case .text:
+                            if let v = selectedVisualClip, v.mediaType == .text { TextTab(clip: v) }
+                        case .video:
+                            videoTabContent()
+                        case .audio:
+                            audioTabContent()
+                        case .none:
+                            EmptyView()
                         }
-                        .padding(AppTheme.Spacing.lg)
                     }
+                    .padding(AppTheme.Spacing.lg)
                 }
             }
         }
@@ -243,12 +214,6 @@ struct InspectorView: View {
     private func tabBar(_ tabs: [ClipTab]) -> some View {
         genericTabBar(titles: tabs.map(\.rawValue), selected: activeTab?.rawValue) { title in
             if let tab = tabs.first(where: { $0.rawValue == title }) { preferredTab = tab }
-        }
-    }
-
-    private func assetTabBar(_ tabs: [AssetTab]) -> some View {
-        genericTabBar(titles: tabs.map(\.rawValue), selected: preferredAssetTab.rawValue) { title in
-            if let tab = tabs.first(where: { $0.rawValue == title }) { preferredAssetTab = tab }
         }
     }
 
@@ -866,18 +831,7 @@ struct InspectorView: View {
 
     @ViewBuilder
     private func mediaAssetInspectorContent(_ asset: MediaAsset) -> some View {
-        if asset.type.isVisual && !AccountService.shared.isMisconfigured {
-            VStack(spacing: 0) {
-                assetTabBar([.details, .ai])
-                if preferredAssetTab == .ai {
-                    AIEditTab(asset: asset)
-                } else {
-                    assetDetailsContent(asset)
-                }
-            }
-        } else {
-            assetDetailsContent(asset)
-        }
+        assetDetailsContent(asset)
     }
 
     @ViewBuilder
@@ -889,14 +843,8 @@ struct InspectorView: View {
                 fileSection(asset)
 
                 if let gen = asset.generationInput {
-                    if GenerationReferencesStrip.hasResolvableReferences(gen, in: editor.mediaAssets) {
-                        metadataSection(title: "References") {
-                            GenerationReferencesStrip(generationInput: gen)
-                        }
-                    }
-
                     metadataSection(title: "Generated") {
-                        plainMetadataRow(label: "Model", value: ModelRegistry.displayName(for: gen.model))
+                        plainMetadataRow(label: "Model", value: gen.model)
                         if !gen.aspectRatio.isEmpty {
                             plainMetadataRow(label: "Aspect Ratio", value: gen.aspectRatio)
                         }

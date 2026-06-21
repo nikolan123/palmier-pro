@@ -730,12 +730,6 @@ final class TimelineView: NSView {
         addToChatItem.target = self
         addToChatItem.representedObject = targetClipIds
         aiItems.append(addToChatItem)
-        if let aiEditSubmenu = aiEditSubmenu(for: clip.id) {
-            let aiEditItem = NSMenuItem(title: "AI Edit", action: nil, keyEquivalent: "")
-            aiEditItem.submenu = aiEditSubmenu
-            aiItems.append(aiEditItem)
-        }
-
         // Media
         var mediaItems: [NSMenuItem] = []
         if clip.mediaType != .text, singleLinkGroup {

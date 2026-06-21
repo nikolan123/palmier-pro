@@ -22,10 +22,6 @@ enum MainMenuBuilder {
         let menu = NSMenu(title: "Palmier Pro")
         menu.addItem(withTitle: "About Palmier Pro", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         menu.addItem(.separator())
-        let updatesItem = NSMenuItem(title: "Check for Updates…", action: #selector(Updater.checkForUpdates(_:)), keyEquivalent: "")
-        updatesItem.target = Updater.shared
-        menu.addItem(updatesItem)
-        menu.addItem(.separator())
         menu.addItem(withTitle: "Settings…", action: #selector(AppDelegate.showSettings(_:)), keyEquivalent: ",")
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit Palmier Pro", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -156,8 +152,6 @@ enum MainMenuBuilder {
         menu.addItem(.separator())
         menu.addItem(withTitle: "Keyboard Shortcuts", action: #selector(AppDelegate.showKeyboardShortcuts(_:)), keyEquivalent: "?")
         menu.addItem(withTitle: "MCP Instructions", action: #selector(AppDelegate.showMCPInstructions(_:)), keyEquivalent: "")
-        menu.addItem(.separator())
-        menu.addItem(withTitle: "Send Feedback…", action: #selector(AppDelegate.showFeedback(_:)), keyEquivalent: "")
         item.submenu = menu
         return item
     }

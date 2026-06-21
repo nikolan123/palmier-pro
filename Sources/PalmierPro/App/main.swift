@@ -2,8 +2,6 @@ import AppKit
 
 Log.bootstrap()
 BundledFonts.register()
-AccountService.shared.configure()
-ModelCatalog.shared.configure()
 
 // Shorten the default tooltip delay from 2s to 0.01s.
 UserDefaults.standard.set(10, forKey: "NSInitialToolTipDelay")

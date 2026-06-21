@@ -7,17 +7,6 @@ final class PreviewPlayheadState {
     var sourceFrame: Int = 0
 }
 
-struct PendingPanelSeed {
-    let asset: MediaAsset
-    let stored: GenerationInput
-}
-
-struct PendingAudioPlacement {
-    let startFrame: Int
-    let spanSeconds: Double
-    let actionName: String
-}
-
 @Observable
 @MainActor
 final class EditorViewModel {
@@ -28,7 +17,6 @@ final class EditorViewModel {
         didSet { timelineRenderRevision &+= 1 }
     }
     var mediaManifest = MediaManifest()
-    var generationLog = GenerationLog()
 
     // MARK: - Panel focus
 
@@ -77,15 +65,7 @@ final class EditorViewModel {
     var isScrubbing: Bool = false
     var toolMode: ToolMode = .pointer
     var showExportDialog: Bool = false
-    var showGenerationPanel: Bool = false {
-        didSet { if showGenerationPanel && !oldValue { showMediaPanelMediaTab() } }
-    }
-    /// AIEditTab input consumed by GenerationView.
-    var pendingPanelSeed: PendingPanelSeed?
-    var pendingEditReplacementClipId: String?
-    var pendingEditTrimmedSource: TrimmedSource?
-    var pendingEditAudioPlacement: PendingAudioPlacement?
-    /// Clip ids currently awaiting an AI-generated replacement.
+    /// Clip ids currently awaiting an asynchronous replacement.
     var pendingReplacements: Set<String> = []
     var cropEditingActive: Bool = false
     var cropAspectLock: CropAspectLock = .free
@@ -129,7 +109,6 @@ final class EditorViewModel {
         manifest: { MediaManifest() }, projectURL: { nil }
     )
 
-    let generationService = GenerationService()
     let agentService = AgentService()
 
     var agentPanelVisible: Bool = {

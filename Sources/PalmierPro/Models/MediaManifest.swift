@@ -29,8 +29,6 @@ struct MediaManifestEntry: Codable, Sendable, Equatable, Identifiable {
     var sourceFPS: Double?
     var hasAudio: Bool?
     var folderId: String?
-    var cachedRemoteURL: String?
-    var cachedRemoteURLExpiresAt: Date?
 }
 
 struct GenerationInput: Codable, Sendable, Equatable {

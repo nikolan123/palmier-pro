@@ -6,9 +6,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
 
-        // Start Sparkle updater
-        _ = Updater.shared
-
         HomeWindowController.shared.showWindow(nil)
 
         AppNotifications.configure()
@@ -40,11 +37,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     @objc func showMCPInstructions(_ sender: Any?) {
         HelpWindowController.shared.show(tab: .mcp)
-    }
-
-    @MainActor
-    @objc func showFeedback(_ sender: Any?) {
-        FeedbackWindowController.shared.show()
     }
 
     @MainActor

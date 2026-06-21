@@ -17,18 +17,6 @@ final class MediaAsset: Identifiable {
     var generationInput: GenerationInput?
     var generationStatus: GenerationStatus = .none
     var folderId: String?
-    var pendingDownloadURL: URL?
-    var cachedRemoteURL: String?
-    var cachedRemoteURLExpiresAt: Date?
-
-    /// Returns the cached URL if it's set AND not expired; else nil.
-    var freshRemoteURL: String? {
-        guard let url = cachedRemoteURL,
-              let expiresAt = cachedRemoteURLExpiresAt,
-              expiresAt > Date()
-        else { return nil }
-        return url
-    }
 
     enum GenerationStatus: Equatable {
         case none
@@ -69,8 +57,6 @@ final class MediaAsset: Identifiable {
         self.sourceFPS = entry.sourceFPS
         self.hasAudio = entry.hasAudio ?? false
         self.folderId = entry.folderId
-        self.cachedRemoteURL = entry.cachedRemoteURL
-        self.cachedRemoteURLExpiresAt = entry.cachedRemoteURLExpiresAt
     }
 
     /// Produce a serializable manifest entry from this asset.
@@ -82,14 +68,11 @@ final class MediaAsset: Identifiable {
         } else {
             source = .external(absolutePath: url.path)
         }
-        let fresh: String? = freshRemoteURL
         return MediaManifestEntry(
             id: id, name: name, type: type, source: source, duration: duration,
             generationInput: generationInput,
             sourceWidth: sourceWidth, sourceHeight: sourceHeight, sourceFPS: sourceFPS,
             hasAudio: hasAudio, folderId: folderId,
-            cachedRemoteURL: fresh,
-            cachedRemoteURLExpiresAt: fresh == nil ? nil : cachedRemoteURLExpiresAt,
         )
     }
 

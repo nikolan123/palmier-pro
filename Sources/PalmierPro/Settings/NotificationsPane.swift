@@ -7,7 +7,7 @@ struct NotificationsPane: View {
         VStack(alignment: .leading, spacing: AppTheme.Spacing.md) {
             SettingsToggleRow(
                 title: "Show notifications",
-                subtitle: "Get a system notification when a generation finishes.",
+                subtitle: "Allow Palmier Pro to show system notifications.",
                 isOn: $notificationsEnabled
             )
             .onChange(of: notificationsEnabled) { _, newValue in

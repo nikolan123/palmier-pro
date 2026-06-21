@@ -159,16 +159,6 @@ final class AppState {
         }
     }
 
-    func openSample(slug: String, startTutorial: Bool, onProgress: @escaping (Double) -> Void = { _ in }) async throws {
-        let options = ProjectOpenOptions(startTutorial: startTutorial)
-        if let cached = SampleProjectService.shared.cachedURL(slug: slug) {
-            openProject(at: cached, register: false, options: options)
-            return
-        }
-        let url = try await SampleProjectService.shared.materialize(slug: slug, onProgress: onProgress)
-        openProject(at: url, register: false, options: options)
-    }
-
     func openProjectFromPanel() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [Self.projectContentType]

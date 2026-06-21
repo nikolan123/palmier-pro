@@ -26,8 +26,6 @@ struct TitleBarTrailingView: View {
         HStack(spacing: AppTheme.Spacing.sm) {
             Spacer(minLength: 0)
 
-            UpdateBadgeView()
-
             Button(action: { editor.showExportDialog = true }) {
                 HStack(spacing: AppTheme.Spacing.xs) {
                     Image(systemName: "square.and.arrow.up")
@@ -42,8 +40,6 @@ struct TitleBarTrailingView: View {
                 .help("Export (⌘E)")
             }
             .buttonStyle(.plain)
-
-            UserAvatarButton()
         }
     }
 }

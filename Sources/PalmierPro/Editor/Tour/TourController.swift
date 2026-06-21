@@ -31,15 +31,13 @@ enum TourTarget: Equatable {
 /// `.tourAnchor(_:)`. `timelineRuler` is derived (the AppKit ruler has no SwiftUI view).
 enum TourAnchorID: Hashable {
     case importButton
-    case generateButton
-    case generation
     case smartSearch
     case screenshotButton
     case timelineRuler
 
     var hostPanel: EditorViewModel.FocusedPanel {
         switch self {
-        case .importButton, .generateButton, .generation, .smartSearch: return .media
+        case .importButton, .smartSearch: return .media
         case .screenshotButton: return .preview
         case .timelineRuler: return .timeline
         }
@@ -63,7 +61,7 @@ final class TourController {
     /// Live backing views for `.element` targets, registered by `.tourAnchor(_:)`.
     @ObservationIgnored var anchorViews: [TourAnchorID: WeakView] = [:]
     /// Bumped when an anchor view lays out, so the split controller recomputes the
-    /// frame for controls that appear/animate inside a panel (e.g. the generation panel).
+    /// frame for controls that appear or animate inside a panel.
     private(set) var anchorRevision = 0
     func anchorDidLayout() { anchorRevision &+= 1 }
     @ObservationIgnored private weak var editor: EditorViewModel?
@@ -113,9 +111,6 @@ final class TourController {
             case .inspector: editor.inspectorPanelVisible = true
             case .timeline, .preview: break
             }
-            editor.showGenerationPanel = (target == .element(.generation))
-        } else {
-            editor.showGenerationPanel = false
         }
         stepIndex = index
     }
@@ -130,10 +125,6 @@ final class TourController {
                      instruction: "This is where all your footage and assets live."),
             TourStep(kind: .spotlight(.element(.importButton)), title: "Import footage",
                      instruction: "Import your footage here, or drag and drop, or copy-paste, into the media panel."),
-            TourStep(kind: .spotlight(.element(.generateButton)), title: "Generate",
-                     instruction: "Click Generate to open the generation panel."),
-            TourStep(kind: .spotlight(.element(.generation)), title: "Generation panel",
-                     instruction: "Generate video, image, or audio with different models and settings. Drag assets from the media panel above into the reference frame."),
         ]
         // Only shown when the "Smart search" button is present (model not yet installed).
         if smartSearchAvailable(editor: editor) {
@@ -144,15 +135,15 @@ final class TourController {
             TourStep(kind: .spotlight(.panel(.preview)), title: "Preview",
                      instruction: "This is your preview panel to play a selected media or the whole timeline."),
             TourStep(kind: .spotlight(.element(.screenshotButton)), title: "Screenshot a frame",
-                     instruction: "Take a screenshot of the preview and use it as a reference for generation. Particularly useful for creating AI transitions."),
+                     instruction: "Take a screenshot of the preview and add it to the media library."),
             TourStep(kind: .spotlight(.panel(.inspector)), title: "Inspector",
                      instruction: "This is your inspector panel. Select a clip from the timeline to edit it."),
             TourStep(kind: .spotlight(.panel(.timeline)), title: "Timeline",
-                     instruction: "Your timeline: the top half is video, the bottom half is audio. This is where you edit. Right-click a clip for some cool AI features such as upscale, edit, or generate music."),
+                     instruction: "Your timeline: the top half is video, the bottom half is audio. This is where you edit."),
             TourStep(kind: .spotlight(.element(.timelineRuler)), title: "Select a range",
-                     instruction: "This is the timeline ruler. Shift+drag on the ruler to select a range to render. You can pick any slot to AI edit or generate music that fits that range."),
+                     instruction: "This is the timeline ruler. Shift+drag to select a range."),
             TourStep(kind: .spotlight(.panel(.agent)), title: "AI agent",
-                     instruction: "Chat with your agent! It can generate content, edit clips, organize your assets, and much more. Start by signing in, or bring your own Anthropic API key."),
+                     instruction: "Add an Anthropic API key to edit the project through the sidebar chat, or connect an external agent through MCP."),
             TourStep(kind: .outro, title: "You're all set",
                      instruction: "Start creating, or explore these to get the most out of Palmier Pro."),
         ]

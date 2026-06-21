@@ -455,13 +455,7 @@ struct PreviewContainerView: View {
                         .truncationMode(.middle)
                         .padding(.horizontal, AppTheme.Spacing.lg)
                 }
-                if isUnprocessable {
-                    Button("Report a Problem") {
-                        FeedbackWindowController.shared.show(prefill: Self.unprocessablePrefill(path: path))
-                    }
-                    .buttonStyle(.capsule(.prominent, size: .regular))
-                    .padding(.top, AppTheme.Spacing.xs)
-                } else {
+                if !isUnprocessable {
                     HStack(spacing: AppTheme.Spacing.sm) {
                         if let assetId {
                             Button("Relink…") { relinkFile(assetId: assetId) }
@@ -500,23 +494,6 @@ struct PreviewContainerView: View {
                 }
                 .frame(maxWidth: 520, maxHeight: 240)
                 .fixedSize(horizontal: false, vertical: true)
-                if let asset = activeMediaAsset, asset.pendingDownloadURL != nil {
-                    Button {
-                        editor.generationService.retryDownload(asset: asset, editor: editor)
-                    } label: {
-                        HStack(spacing: AppTheme.Spacing.xs) {
-                            Image(systemName: "arrow.clockwise")
-                            Text("Retry Download")
-                        }
-                        .font(.system(size: AppTheme.FontSize.sm, weight: .medium))
-                        .foregroundStyle(AppTheme.Text.primaryColor)
-                        .padding(.horizontal, AppTheme.Spacing.md)
-                        .padding(.vertical, AppTheme.Spacing.sm)
-                    }
-                    .buttonStyle(.plain)
-                    .background(.white.opacity(AppTheme.Opacity.soft), in: .capsule)
-                    .overlay(Capsule().strokeBorder(.white.opacity(AppTheme.Opacity.muted), lineWidth: AppTheme.BorderWidth.hairline))
-                }
             }
             .padding(AppTheme.Spacing.xl)
             .fixedSize(horizontal: false, vertical: true)

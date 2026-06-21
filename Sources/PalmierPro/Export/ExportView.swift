@@ -361,7 +361,6 @@ struct ExportView: View {
                 let report = await service.exportPalmierProject(
                     timeline: editor.timeline,
                     manifest: editor.mediaManifest,
-                    generationLog: editor.generationLog,
                     sourceProjectURL: editor.projectURL,
                     outputURL: url
                 )

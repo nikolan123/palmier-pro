@@ -5,16 +5,6 @@ struct AgentPanelView: View {
 
     private static let starterPrompts: [AgentStarterPrompt] = [
         AgentStarterPrompt(
-            title: "Generate an AI video",
-            systemImage: "sparkles",
-            prompt: "Generate an AI video of "
-        ),
-        AgentStarterPrompt(
-            title: "Generate B-roll",
-            systemImage: "film",
-            prompt: "Generate B-roll for my timeline. Inspect the current edit, identify sections that would benefit from cutaways, generate suitable B-roll, and place it where it supports the story."
-        ),
-        AgentStarterPrompt(
             title: "Create a letterbox opening",
             systemImage: "camera.aperture",
             prompt: "Create a cinematic opening for my timeline. Use the first visual clip, animate a subtle letterbox matte with top and bottom crop keyframes, starting from crop to uncrop,and keep the motion restrained and polished."
@@ -23,16 +13,6 @@ struct AgentPanelView: View {
             title: "Add captions to my timeline",
             systemImage: "captions.bubble",
             prompt: "Add captions to my timeline. Transcribe spoken audio in timeline clips, build readable caption phrases on word boundaries, and place them as text clips aligned to the edit."
-        ),
-        AgentStarterPrompt(
-            title: "Create a voiceover",
-            systemImage: "waveform",
-            prompt: "Create a voiceover for my timeline. Draft concise narration for the current edit, generate the voiceover, and add it to an audio track aligned with the timeline."
-        ),
-        AgentStarterPrompt(
-            title: "Generate music and sync to my timeline",
-            systemImage: "music.note",
-            prompt: "Score my timeline with music. Inspect the edit's mood and pacing, generate music for the full timeline, and place it on an audio track aligned to the edit."
         ),
         AgentStarterPrompt(
             title: "Organize my media into structured folders",
@@ -260,36 +240,7 @@ struct AgentPanelView: View {
                     .font(.system(size: AppTheme.FontSize.xs))
                     .foregroundStyle(.red)
                     .multilineTextAlignment(.leading)
-                if let cta = errorCTA(for: err) {
-                    Button(action: cta.action) {
-                        Text(cta.title)
-                            .font(.system(size: AppTheme.FontSize.xs, weight: .medium))
-                    }
-                    .buttonStyle(.capsule(.secondary))
-                    .controlSize(.small)
-                }
             }
-        }
-    }
-
-    private struct ErrorCTA {
-        let title: String
-        let action: () -> Void
-    }
-
-    private func errorCTA(for error: PalmierClientError?) -> ErrorCTA? {
-        guard let error else { return nil }
-        switch error {
-        case .unauthenticated:
-            return ErrorCTA(title: "Sign in") {
-                SettingsWindowController.shared.show(tab: .account)
-            }
-        case .insufficientCredits:
-            return ErrorCTA(title: "View plans") {
-                SettingsWindowController.shared.show(tab: .account)
-            }
-        case .upstream:
-            return nil
         }
     }
 
@@ -316,32 +267,19 @@ struct AgentPanelView: View {
 
     @ViewBuilder
     private var missingKeyState: some View {
-        let account = AccountService.shared
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
-            Button(action: { SettingsWindowController.shared.show(tab: .account) }) {
-                Text(missingKeyPrimaryAction(account: account))
-                    .underline()
-                    .foregroundStyle(AppTheme.Accent.primary)
-            }
-            .buttonStyle(.plain)
-
-            Text("or use")
+        HStack(alignment: .firstTextBaseline, spacing: AppTheme.Spacing.xs) {
+            Text("Add")
                 .foregroundStyle(AppTheme.Text.tertiaryColor)
-
             Button(action: { SettingsWindowController.shared.show(tab: .agent) }) {
-                Text("your own Anthropic key")
+                Text("an Anthropic API key")
                     .underline()
                     .foregroundStyle(AppTheme.Accent.primary)
             }
             .buttonStyle(.plain)
+            Text("to use chat.")
+                .foregroundStyle(AppTheme.Text.tertiaryColor)
         }
         .font(.system(size: AppTheme.FontSize.md, weight: .medium))
-    }
-
-    private func missingKeyPrimaryAction(account: AccountService) -> String {
-        if !account.isSignedIn { return "Sign in" }
-        if !account.isPaid { return "Subscribe" }
-        return "Open Settings"
     }
 
     private func scrollToBottom(_ proxy: ScrollViewProxy) {
