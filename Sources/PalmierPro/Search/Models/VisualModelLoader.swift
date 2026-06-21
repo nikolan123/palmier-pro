@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 /// App-level search model loader. Loads the SigLIP model on app launch.
@@ -19,6 +20,7 @@ final class VisualModelLoader {
     private(set) var enabled = SearchIndexConfig.enabled
     @ObservationIgnored private(set) var embedder: VisualEmbedder?
     private let downloader = ModelDownloader()
+    private var downloadConfirmationVisible = false
 
     var isReady: Bool { state == .ready }
 
@@ -35,7 +37,35 @@ final class VisualModelLoader {
         await load(installed)
     }
 
-    func download() {
+    func requestDownload() {
+        switch state {
+        case .downloading, .preparing, .ready: return
+        default: break
+        }
+        guard !downloadConfirmationVisible else { return }
+
+        downloadConfirmationVisible = true
+        let alert = NSAlert()
+        alert.messageText = "Download Smart Search model?"
+        alert.informativeText = Self.downloadDescription
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Download")
+        alert.addButton(withTitle: "Cancel")
+
+        let handleResponse: (NSApplication.ModalResponse) -> Void = { [weak self] response in
+            guard let self else { return }
+            self.downloadConfirmationVisible = false
+            guard response == .alertFirstButtonReturn else { return }
+            self.download()
+        }
+        if let window = NSApp.keyWindow {
+            alert.beginSheetModal(for: window, completionHandler: handleResponse)
+        } else {
+            handleResponse(alert.runModal())
+        }
+    }
+
+    private func download() {
         switch state {
         case .downloading, .preparing, .ready: return
         default: break
@@ -59,6 +89,18 @@ final class VisualModelLoader {
                 Log.search.error("model download failed: \(error.localizedDescription)")
             }
         }
+    }
+
+    private static var downloadDescription: String {
+        let manifest = SearchIndexConfig.manifest
+        let size = ByteCountFormatter.string(fromByteCount: manifest.downloadBytes, countStyle: .file)
+
+        return """
+        This will download a model from HuggingFace.
+        
+        Model: \(manifest.model), version \(manifest.version)
+        Download size: \(size)
+        """
     }
 
     func setEnabled(_ value: Bool) {

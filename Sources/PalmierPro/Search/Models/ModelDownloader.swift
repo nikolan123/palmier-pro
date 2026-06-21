@@ -23,6 +23,14 @@ final class ModelDownloader: @unchecked Sendable {
         let contextLength: Int
         let files: Files
 
+        var downloadFiles: [File] {
+            [files.imageEncoder, files.textEncoder, files.tokenizer]
+        }
+
+        var downloadBytes: Int64 {
+            downloadFiles.reduce(0) { $0 + $1.bytes }
+        }
+
         var spec: VisualEmbedder.Spec {
             .init(model: model, version: version, embeddingDim: embeddingDim,
                   imageSize: imageSize, contextLength: contextLength)
@@ -76,8 +84,8 @@ final class ModelDownloader: @unchecked Sendable {
         try fm.createDirectory(at: staging, withIntermediateDirectories: true)
         defer { try? fm.removeItem(at: staging) }
 
-        let files = [manifest.files.imageEncoder, manifest.files.textEncoder, manifest.files.tokenizer]
-        let totalBytes = files.reduce(0) { $0 + $1.bytes }
+        let files = manifest.downloadFiles
+        let totalBytes = manifest.downloadBytes
         var doneBytes: Int64 = 0
         var staged: [String: URL] = [:]
 

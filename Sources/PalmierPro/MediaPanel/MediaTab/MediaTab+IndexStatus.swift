@@ -8,7 +8,7 @@ extension MediaTab {
         switch model.state {
         case .notInstalled where model.enabled && hasIndexableAssets:
             statusButton(icon: "sparkle.magnifyingglass", label: "Smart search") {
-                model.download()
+                model.requestDownload()
             }
             .help("Downloads a \(modelSizeLabel) on-device model so you can search media visually.")
         case .downloading(let fraction):
@@ -22,7 +22,7 @@ extension MediaTab {
                             help: "Analyzing media so you can search it.",
                             progress: search.indexingProgress)
         case .failed where model.enabled:
-            statusButton(icon: "exclamationmark.triangle", label: "Retry") { model.download() }
+            statusButton(icon: "exclamationmark.triangle", label: "Retry") { model.requestDownload() }
                 .help("Visual search model download failed. Check your connection and try again.")
         default:
             EmptyView()
@@ -34,8 +34,10 @@ extension MediaTab {
     }
 
     private var modelSizeLabel: String {
-        let files = SearchIndexConfig.manifest.files
-        return ByteCountFormatter.string(fromByteCount: files.imageEncoder.bytes + files.textEncoder.bytes, countStyle: .file)
+        ByteCountFormatter.string(
+            fromByteCount: SearchIndexConfig.manifest.downloadBytes,
+            countStyle: .file
+        )
     }
 
     private func statusButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
