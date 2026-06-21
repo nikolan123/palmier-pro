@@ -106,9 +106,11 @@ enum MainMenuBuilder {
         inspectorItem.keyEquivalentModifierMask = [.command, .option]
         menu.addItem(inspectorItem)
 
-        let agentItem = NSMenuItem(title: "Agent Panel", action: #selector(EditorActions.toggleAgentPanel(_:)), keyEquivalent: "a")
-        agentItem.keyEquivalentModifierMask = [.command, .option]
-        menu.addItem(agentItem)
+        if ClaudeIntegrationPreferences.isEnabled {
+            let agentItem = NSMenuItem(title: "Agent Panel", action: #selector(EditorActions.toggleAgentPanel(_:)), keyEquivalent: "a")
+            agentItem.keyEquivalentModifierMask = [.command, .option]
+            menu.addItem(agentItem)
+        }
 
         menu.addItem(.separator())
 

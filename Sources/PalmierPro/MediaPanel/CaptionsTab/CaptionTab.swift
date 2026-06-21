@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CaptionTab: View {
     @Environment(EditorViewModel.self) var editor
+    @Bindable private var appState = AppState.shared
 
     @State private var style = TextStyle(fontSize: AppTheme.Caption.defaultFontSize)
     @State private var center = AppTheme.Caption.defaultCenter
@@ -261,6 +262,7 @@ struct CaptionTab: View {
     }
 
     private func handoff(_ prompt: String) {
+        guard appState.claudeIntegrationEnabled else { return }
         let service = editor.agentService
         service.newChat()
         service.draft = prompt
@@ -375,7 +377,9 @@ struct CaptionTab: View {
                 .buttonStyle(.plain).focusable(false)
                 .disabled(effectiveCount == 0 || isGenerating)
 
-                agentMenu
+                if appState.claudeIntegrationEnabled {
+                    agentMenu
+                }
             }
         }
         .padding(.horizontal, AppTheme.Spacing.lgXl)

@@ -11,12 +11,13 @@ final class AppState {
     static let shared = AppState()
 
     private(set) var activeProject: VideoProject?
-
+    private(set) var claudeIntegrationEnabled = ClaudeIntegrationPreferences.isEnabled
+    private(set) var mcpEnabled = MCPService.isEnabledPreference
     private(set) var mcpService: MCPService?
 
     func startMCPService() {
         guard mcpService == nil else { return }
-        guard MCPService.isEnabledPreference else {
+        guard mcpEnabled else {
             Log.mcp.notice("mcp disabled in settings; not starting")
             return
         }
@@ -34,11 +35,29 @@ final class AppState {
 
     func setMCPEnabled(_ enabled: Bool) {
         MCPService.isEnabledPreference = enabled
+        mcpEnabled = enabled
         if enabled {
             startMCPService()
         } else {
             stopMCPService()
         }
+    }
+
+    func setClaudeIntegrationEnabled(_ enabled: Bool) {
+        ClaudeIntegrationPreferences.isEnabled = enabled
+        claudeIntegrationEnabled = enabled
+        var projects = NSDocumentController.shared.documents.compactMap { $0 as? VideoProject }
+        if let activeProject, !projects.contains(where: { $0 === activeProject }) {
+            projects.append(activeProject)
+        }
+        for project in projects {
+            let editor = project.editorViewModel
+            editor.agentService.setIntegrationEnabled(enabled)
+            if !enabled {
+                editor.agentPanelVisible = false
+            }
+        }
+        NSApp.mainMenu = MainMenuBuilder.buildMenu()
     }
 
     func showHome() {

@@ -731,10 +731,12 @@ final class TimelineView: NSView {
 
         // AI
         var aiItems: [NSMenuItem] = []
-        let addToChatItem = NSMenuItem(title: "Add to Chat", action: #selector(performAddClipsToChat(_:)), keyEquivalent: "")
-        addToChatItem.target = self
-        addToChatItem.representedObject = targetClipIds
-        aiItems.append(addToChatItem)
+        if AppState.shared.claudeIntegrationEnabled {
+            let addToChatItem = NSMenuItem(title: "Add to Chat", action: #selector(performAddClipsToChat(_:)), keyEquivalent: "")
+            addToChatItem.target = self
+            addToChatItem.representedObject = targetClipIds
+            aiItems.append(addToChatItem)
+        }
         // Media
         var mediaItems: [NSMenuItem] = []
         if clip.mediaType != .text, singleLinkGroup {
@@ -780,9 +782,11 @@ final class TimelineView: NSView {
     }
 
     private func addTimelineRangeItems(to menu: NSMenu) {
-        let addItem = NSMenuItem(title: "Add Range to Chat", action: #selector(performAddTimelineRangeToChat(_:)), keyEquivalent: "")
-        addItem.target = self
-        menu.addItem(addItem)
+        if AppState.shared.claudeIntegrationEnabled {
+            let addItem = NSMenuItem(title: "Add Range to Chat", action: #selector(performAddTimelineRangeToChat(_:)), keyEquivalent: "")
+            addItem.target = self
+            menu.addItem(addItem)
+        }
 
         let saveItem = NSMenuItem(title: "Save Range as Media", action: #selector(performSaveTimelineRangeAsMedia(_:)), keyEquivalent: "")
         saveItem.target = self

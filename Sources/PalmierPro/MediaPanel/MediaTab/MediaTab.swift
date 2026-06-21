@@ -3,6 +3,7 @@ import UniformTypeIdentifiers
 
 struct MediaTab: View {
     @Environment(EditorViewModel.self) var editor
+    @Bindable private var appState = AppState.shared
 
     // Toolbar state
     @State var sortMode: SortMode = .dateAdded
@@ -538,7 +539,9 @@ struct MediaTab: View {
     }
 
     private var overflowMenu: some View {
-        let canOrganize = editor.agentService.hasApiKey && !editor.mediaAssets.isEmpty
+        let canOrganize = appState.claudeIntegrationEnabled
+            && editor.agentService.hasApiKey
+            && !editor.mediaAssets.isEmpty
         return toolbarMenuIcon(systemName: "ellipsis") {
             Button(action: createNewFolderInCurrent) {
                 Label("New Folder", systemImage: "folder.badge.plus")
@@ -552,6 +555,7 @@ struct MediaTab: View {
     }
 
     private func organizeWithAgent() {
+        guard appState.claudeIntegrationEnabled else { return }
         let folderHint = currentFolderId.map { _ in " Work within the current folder." } ?? ""
         let service = editor.agentService
         service.newChat()

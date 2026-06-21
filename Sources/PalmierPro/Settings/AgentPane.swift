@@ -12,11 +12,29 @@ struct AgentPane: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.Spacing.lg) {
-            apiKeySection
+            claudeSection
             Divider().overlay(AppTheme.Border.subtleColor)
             mcpSection
         }
         .onAppear(perform: refresh)
+    }
+
+    private var claudeSection: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.md) {
+            SettingsToggleRow(
+                title: "Claude integration",
+                subtitle: "Show the in-app chat and Claude-powered editing tools.",
+                isOn: Binding(
+                    get: { appState.claudeIntegrationEnabled },
+                    set: { appState.setClaudeIntegrationEnabled($0) }
+                )
+            )
+
+            if appState.claudeIntegrationEnabled {
+                Divider().overlay(AppTheme.Border.subtleColor)
+                apiKeySection
+            }
+        }
     }
 
     private var apiKeySection: some View {
@@ -196,7 +214,7 @@ struct AgentPane: View {
             Toggle(
                 "",
                 isOn: Binding(
-                    get: { (appState.mcpService?.isRunning ?? false) },
+                    get: { appState.mcpEnabled },
                     set: { appState.setMCPEnabled($0) }
                 )
             )

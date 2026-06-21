@@ -3,6 +3,7 @@ import SwiftUI
 
 struct EditorView: NSViewControllerRepresentable {
     @Environment(EditorViewModel.self) var editor
+    @Bindable private var appState = AppState.shared
 
     func makeNSViewController(context: Context) -> EditorSplitViewController {
         EditorSplitViewController(editor: editor)
@@ -10,7 +11,9 @@ struct EditorView: NSViewControllerRepresentable {
 
     func updateNSViewController(_ controller: EditorSplitViewController, context: Context) {
         controller.applyLayoutIfNeeded(editor.layoutPreset)
-        controller.applyAgentVisibility(editor.agentPanelVisible)
+        controller.applyAgentVisibility(
+            appState.claudeIntegrationEnabled && editor.agentPanelVisible
+        )
         controller.applyMediaVisibility(editor.mediaPanelVisible)
         controller.applyInspectorVisibility(editor.inspectorPanelVisible)
         controller.applyMaximize(editor.maximizedPanel)

@@ -5,6 +5,7 @@ struct AssetThumbnailView: View {
     var onMoveToFolderMenu: AnyView? = nil
 
     @Environment(EditorViewModel.self) var editor
+    @Bindable private var appState = AppState.shared
     @State private var isRenaming = false
     @FocusState private var isRenameFieldFocused: Bool
     @State private var renameDraft = ""
@@ -187,7 +188,7 @@ struct AssetThumbnailView: View {
 
     @ViewBuilder
     private var hoverActions: some View {
-        if isHovering && !asset.isGenerating && !isSwapPickMode {
+        if appState.claudeIntegrationEnabled && isHovering && !asset.isGenerating && !isSwapPickMode {
             Button { editor.agentService.attachMention(for: asset) } label: {
                 Image(systemName: "bubble.left")
                     .font(.system(size: AppTheme.FontSize.xs, weight: .semibold))

@@ -134,7 +134,7 @@ final class EditorViewModel {
         manifest: { MediaManifest() }, projectURL: { nil }
     )
 
-    let agentService = AgentService()
+    let agentService: AgentService
 
     var agentPanelVisible: Bool = {
         UserDefaults.standard.object(forKey: "agentPanelVisible") as? Bool ?? false
@@ -174,7 +174,11 @@ final class EditorViewModel {
 
     func showMediaPanelMediaTab() { mediaPanelShowMediaTabTick += 1 }
 
-    init() {
+    init(claudeIntegrationEnabled: Bool = ClaudeIntegrationPreferences.isEnabled) {
+        agentService = AgentService(isIntegrationEnabled: claudeIntegrationEnabled)
+        if !claudeIntegrationEnabled {
+            agentPanelVisible = false
+        }
         mediaResolver = MediaResolver(
             manifest: { [weak self] in self?.mediaManifest ?? MediaManifest() },
             projectURL: { [weak self] in self?.projectURL }

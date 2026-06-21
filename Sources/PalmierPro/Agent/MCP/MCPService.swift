@@ -11,14 +11,14 @@ final class MCPService {
     private static let enabledKey = "io.palmier.pro.mcp.enabled"
 
     static var isEnabledPreference: Bool {
-        get {
-            let defaults = UserDefaults.standard
-            if defaults.object(forKey: enabledKey) == nil { return true }
-            return defaults.bool(forKey: enabledKey)
-        }
+        get { isEnabled(in: .standard) }
         set {
             UserDefaults.standard.set(newValue, forKey: enabledKey)
         }
+    }
+
+    static func isEnabled(in defaults: UserDefaults) -> Bool {
+        defaults.object(forKey: enabledKey) as? Bool ?? false
     }
 
     private(set) var isRunning: Bool = false

@@ -129,7 +129,7 @@ final class TourController {
         // Only shown when the "Smart search" button is present (model not yet installed).
         if smartSearchAvailable(editor: editor) {
             steps.append(TourStep(kind: .spotlight(.element(.smartSearch)), title: "Smart search",
-                                  instruction: "Download a local model to index your media, so you or your agent can search any clips by describing them. The model runs on-device and nothing leaves your Mac."))
+                                  instruction: "Download a local model to index your media and search clips by describing them. The model runs on-device and nothing leaves your Mac."))
         }
         steps += [
             TourStep(kind: .spotlight(.panel(.preview)), title: "Preview",
@@ -142,11 +142,19 @@ final class TourController {
                      instruction: "Your timeline: the top half is video, the bottom half is audio. This is where you edit."),
             TourStep(kind: .spotlight(.element(.timelineRuler)), title: "Select a range",
                      instruction: "This is the timeline ruler. Shift+drag to select a range."),
-            TourStep(kind: .spotlight(.panel(.agent)), title: "AI agent",
-                     instruction: "Add an Anthropic API key to edit the project through the sidebar chat, or connect an external agent through MCP."),
-            TourStep(kind: .outro, title: "You're all set",
-                     instruction: "Start creating, or explore these to get the most out of Palmier Pro."),
         ]
+        if AppState.shared.claudeIntegrationEnabled {
+            steps.append(TourStep(
+                kind: .spotlight(.panel(.agent)),
+                title: "AI agent",
+                instruction: "Add an Anthropic API key to edit the project through the sidebar chat."
+            ))
+        }
+        steps.append(TourStep(
+            kind: .outro,
+            title: "You're all set",
+            instruction: "Start creating, or explore these to get the most out of Palmier Pro."
+        ))
         return steps
     }
 

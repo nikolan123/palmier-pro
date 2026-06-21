@@ -7,7 +7,9 @@ final class VideoProject: NSDocument {
 
     static let typeIdentifier = Project.typeIdentifier
 
-    let editorViewModel = EditorViewModel()
+    let editorViewModel = EditorViewModel(
+        claudeIntegrationEnabled: ClaudeIntegrationPreferences.isEnabled
+    )
 
     /// Decoded off-main in read(), applied on main in makeWindowControllers.
     private nonisolated(unsafe) var loadedTimeline: Timeline?

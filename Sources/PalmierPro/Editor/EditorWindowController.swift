@@ -282,7 +282,10 @@ extension EditorWindowController: EditorActions {
 
     @objc func toggleMediaPanel(_ sender: Any?) { editorViewModel.mediaPanelVisible.toggle() }
     @objc func toggleInspectorPanel(_ sender: Any?) { editorViewModel.inspectorPanelVisible.toggle() }
-    @objc func toggleAgentPanel(_ sender: Any?) { editorViewModel.agentPanelVisible.toggle() }
+    @objc func toggleAgentPanel(_ sender: Any?) {
+        guard AppState.shared.claudeIntegrationEnabled else { return }
+        editorViewModel.agentPanelVisible.toggle()
+    }
     @objc func toggleMaximizePanel(_ sender: Any?) { toggleMaximizePanelAction() }
     @objc func setLayoutDefault(_ sender: Any?) { editorViewModel.layoutPreset = .default }
     @objc func setLayoutMedia(_ sender: Any?) { editorViewModel.layoutPreset = .media }
@@ -306,7 +309,7 @@ extension EditorWindowController: EditorActions {
             return true
         case #selector(toggleAgentPanel(_:)):
             menuItem.state = editorViewModel.agentPanelVisible ? .on : .off
-            return true
+            return AppState.shared.claudeIntegrationEnabled
         case #selector(toggleMaximizePanel(_:)):
             menuItem.state = editorViewModel.maximizedPanel != nil ? .on : .off
             return editorViewModel.maximizedPanel != nil || editorViewModel.focusedPanel != nil

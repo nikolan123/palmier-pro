@@ -7,15 +7,20 @@ final class AgentService {
 
     private var apiKey: String = ""
     private var apiKeyObserver: NSObjectProtocol?
+    private(set) var isIntegrationEnabled: Bool
 
-    init() {
-        reloadAPIKey()
+    init(isIntegrationEnabled: Bool = true) {
+        self.isIntegrationEnabled = isIntegrationEnabled
+        if isIntegrationEnabled {
+            reloadAPIKey()
+        }
         apiKeyObserver = NotificationCenter.default.addObserver(
             forName: .anthropicAPIKeyChanged,
             object: nil,
             queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
+                guard self?.isIntegrationEnabled == true else { return }
                 self?.reloadAPIKey()
             }
         }
@@ -26,6 +31,7 @@ final class AgentService {
             let key = await Task.detached(priority: .utility) {
                 AnthropicKeychain.load() ?? ""
             }.value
+            guard self?.isIntegrationEnabled == true else { return }
             self?.apiKey = key
         }
     }
@@ -38,13 +44,28 @@ final class AgentService {
 
     var hasApiKey: Bool { !apiKey.isEmpty }
 
-    var canStream: Bool { hasApiKey }
+    var canStream: Bool { isIntegrationEnabled && hasApiKey }
 
     var availableModels: [AnthropicModel] { AnthropicModel.allCases }
 
     private func selectClient() -> (any AgentClient)? {
+        guard isIntegrationEnabled else { return nil }
         let chosen = effectiveModel
         return hasApiKey ? AnthropicClient(apiKey: apiKey, model: chosen) : nil
+    }
+
+    func setIntegrationEnabled(_ enabled: Bool) {
+        guard enabled != isIntegrationEnabled else { return }
+        isIntegrationEnabled = enabled
+        if enabled {
+            reloadAPIKey()
+        } else {
+            cancel()
+            apiKey = ""
+            draft = ""
+            mentions.removeAll()
+            streamError = nil
+        }
     }
 
     var effectiveModel: AnthropicModel {
@@ -75,6 +96,7 @@ final class AgentService {
     private static let clipMentionLabelMaxLength = 24
 
     func attachMention(for asset: MediaAsset) {
+        guard isIntegrationEnabled else { return }
         editor?.agentPanelVisible = true
         pruneDetachedMentions()
         guard !mentions.contains(where: { $0.mediaRef == asset.id && !$0.referencesTimelineContext }) else { return }
@@ -84,6 +106,7 @@ final class AgentService {
     }
 
     func attachMentions(forClipIds clipIds: [String]) {
+        guard isIntegrationEnabled else { return }
         guard let editor, !clipIds.isEmpty else { return }
         editor.agentPanelVisible = true
         pruneDetachedMentions()
@@ -108,6 +131,7 @@ final class AgentService {
     }
 
     func attachSelectedTimelineRangeMention() {
+        guard isIntegrationEnabled else { return }
         guard let editor, let range = editor.validSelectedTimelineRange else { return }
         editor.agentPanelVisible = true
         pruneDetachedMentions()
@@ -226,6 +250,7 @@ final class AgentService {
     }
 
     func newChat() {
+        guard isIntegrationEnabled else { return }
         currentTask?.cancel()
         syncMessagesIntoCurrentSession()
         if let id = currentSessionId,
@@ -284,6 +309,7 @@ final class AgentService {
     }
 
     func send(text: String, mentions: [AgentMention]) {
+        guard isIntegrationEnabled else { return }
         guard canStream else {
             streamError = .missingAPIKey
             return

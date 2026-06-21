@@ -7,7 +7,7 @@ import Testing
 struct AgentMentionTests {
 
     @Test func attachClipMentionAddsTimelineClipReference() {
-        let editor = EditorViewModel()
+        let editor = EditorViewModel(claudeIntegrationEnabled: true)
         let asset = MediaAsset(
             id: "asset-video",
             url: URL(fileURLWithPath: "/tmp/interview.mov"),
@@ -29,7 +29,7 @@ struct AgentMentionTests {
     }
 
     @Test func attachClipMentionDoesNotDuplicateExistingClip() {
-        let editor = EditorViewModel()
+        let editor = EditorViewModel(claudeIntegrationEnabled: true)
         let asset = MediaAsset(
             id: "asset-video",
             url: URL(fileURLWithPath: "/tmp/interview.mov"),
@@ -49,7 +49,7 @@ struct AgentMentionTests {
     }
 
     @Test func attachLinkedVideoAndAudioMentionsUseTrackLabelsAndShortNames() {
-        let editor = EditorViewModel()
+        let editor = EditorViewModel(claudeIntegrationEnabled: true)
         let asset = MediaAsset(
             id: "asset-video",
             url: URL(fileURLWithPath: "/tmp/interview.mov"),
@@ -74,7 +74,7 @@ struct AgentMentionTests {
     }
 
     @Test func attachTimelineRangeMentionAddsStructuredRangeReference() {
-        let editor = EditorViewModel()
+        let editor = EditorViewModel(claudeIntegrationEnabled: true)
         editor.timeline = Fixtures.timeline(fps: 30)
         editor.setTimelineRange(startFrame: 90, endFrame: 30)
 
@@ -94,7 +94,7 @@ struct AgentMentionTests {
     }
 
     @Test func attachTimelineRangeMentionDoesNotDuplicateExistingRange() {
-        let editor = EditorViewModel()
+        let editor = EditorViewModel(claudeIntegrationEnabled: true)
         editor.timeline = Fixtures.timeline(fps: 30)
         editor.setTimelineRange(startFrame: 30, endFrame: 90)
 
@@ -106,7 +106,7 @@ struct AgentMentionTests {
     }
 
     @Test func attachTimelineRangeMentionIgnoresInvalidRange() {
-        let editor = EditorViewModel()
+        let editor = EditorViewModel(claudeIntegrationEnabled: true)
         editor.timeline = Fixtures.timeline(fps: 30)
         editor.setTimelineRange(startFrame: 30, endFrame: 30)
 
@@ -117,7 +117,7 @@ struct AgentMentionTests {
     }
 
     @Test func timelineRangeMentionSerializesAgentContext() throws {
-        let editor = EditorViewModel()
+        let editor = EditorViewModel(claudeIntegrationEnabled: true)
         editor.timeline = Fixtures.timeline(fps: 30)
         editor.setTimelineRange(startFrame: 30, endFrame: 90)
         editor.agentService.attachSelectedTimelineRangeMention()
@@ -146,7 +146,7 @@ struct AgentMentionTests {
     }
 
     @Test func timelineRangeMentionCoexistsWithAssetAndClipMentions() {
-        let editor = EditorViewModel()
+        let editor = EditorViewModel(claudeIntegrationEnabled: true)
         let asset = MediaAsset(
             id: "asset-video",
             url: URL(fileURLWithPath: "/tmp/interview.mov"),
