@@ -48,11 +48,16 @@ enum MainMenuBuilder {
         importItem.keyEquivalentModifierMask = [.command]
         menu.addItem(importItem)
 
+        let importSRTItem = NSMenuItem(title: "Import SRT…", action: #selector(EditorActions.importSRT(_:)), keyEquivalent: "")
+        menu.addItem(importSRTItem)
+
         menu.addItem(.separator())
 
         let exportItem = NSMenuItem(title: "Export…", action: #selector(EditorActions.showExport(_:)), keyEquivalent: "e")
         exportItem.keyEquivalentModifierMask = [.command]
         menu.addItem(exportItem)
+
+        menu.addItem(exportSRTSubmenuItem())
 
         let consolidateItem = NSMenuItem(
             title: "Consolidate Project Media…",
@@ -63,6 +68,15 @@ enum MainMenuBuilder {
         menu.addItem(consolidateItem)
 
         item.submenu = menu
+        return item
+    }
+
+    private static func exportSRTSubmenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Export SRT", action: nil, keyEquivalent: "")
+        let submenu = NSMenu(title: "Export SRT")
+        submenu.addItem(NSMenuItem(title: "Captions Only…", action: #selector(EditorActions.exportSRTCaptionsOnly(_:)), keyEquivalent: ""))
+        submenu.addItem(NSMenuItem(title: "All Text…", action: #selector(EditorActions.exportSRTAllText(_:)), keyEquivalent: ""))
+        item.submenu = submenu
         return item
     }
 
@@ -183,6 +197,9 @@ enum MainMenuBuilder {
     func skipFramesForward(_ sender: Any?)
     func skipFramesBackward(_ sender: Any?)
     func showExport(_ sender: Any?)
+    func importSRT(_ sender: Any?)
+    func exportSRTCaptionsOnly(_ sender: Any?)
+    func exportSRTAllText(_ sender: Any?)
     func showConsolidateProjectMedia(_ sender: Any?)
     func toggleMediaPanel(_ sender: Any?)
     func toggleInspectorPanel(_ sender: Any?)

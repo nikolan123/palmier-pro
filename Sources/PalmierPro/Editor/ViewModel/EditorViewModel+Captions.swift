@@ -116,6 +116,42 @@ extension EditorViewModel {
         return placeCaptionTrack(specs)
     }
 
+    @discardableResult
+    func importSRTCaptions(_ captions: [SRTCaption], style: TextStyle, center: CGPoint) -> [String] {
+        let groupId = UUID().uuidString
+        let transformFor = captionTransform(style: style, center: center)
+        let specs = captions.map { caption in
+            let startFrame = secondsToFrame(seconds: caption.start, fps: timeline.fps)
+            let endFrame = secondsToFrame(seconds: caption.end, fps: timeline.fps)
+            return TextClipSpec(
+                trackIndex: 0,
+                startFrame: startFrame,
+                durationFrames: max(1, endFrame - startFrame),
+                content: caption.text,
+                style: style,
+                transform: transformFor(caption.text),
+                captionGroupId: groupId
+            )
+        }
+        return placeCaptionTrack(specs, actionName: "Import SRT")
+    }
+
+    func exportSRTCaptions(includeAllText: Bool = false) -> [SRTCaption] {
+        timeline.tracks
+            .flatMap(\.clips)
+            .filter { $0.mediaType == .text && (includeAllText || $0.captionGroupId != nil) }
+            .sorted { $0.startFrame < $1.startFrame }
+            .compactMap { clip in
+                guard let text = clip.textContent?.trimmingCharacters(in: .whitespacesAndNewlines),
+                      !text.isEmpty else { return nil }
+                return SRTCaption(
+                    start: frameToSeconds(frame: clip.startFrame, fps: timeline.fps),
+                    end: frameToSeconds(frame: clip.endFrame, fps: timeline.fps),
+                    text: text
+                )
+            }
+    }
+
     private func transcribe(_ targets: [CaptionTarget], request: CaptionRequest) async throws -> [String: TranscriptionResult] {
         var results: [String: TranscriptionResult] = [:]
         var firstError: Error?
@@ -223,7 +259,7 @@ extension EditorViewModel {
         }
     }
 
-    private func placeCaptionTrack(_ specs: [TextClipSpec]) -> [String] {
+    private func placeCaptionTrack(_ specs: [TextClipSpec], actionName: String = "Generate Captions") -> [String] {
         undoManager?.beginUndoGrouping()
         defer { undoManager?.endUndoGrouping() }
         let before = timeline
@@ -236,7 +272,7 @@ extension EditorViewModel {
             videoEngine?.syncTextLayers()
             return []
         }
-        registerTimelineSwap(undoState: before, redoState: timeline, actionName: "Generate Captions")
+        registerTimelineSwap(undoState: before, redoState: timeline, actionName: actionName)
         notifyTimelineChanged()
         return ids
     }

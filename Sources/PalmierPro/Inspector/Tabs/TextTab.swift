@@ -3,8 +3,13 @@ import SwiftUI
 struct TextTab: View {
     let clip: Clip
     @Environment(EditorViewModel.self) private var editor
+    @State private var editingCaptionGroup = false
 
     private var style: TextStyle { clip.textStyle ?? TextStyle() }
+    private var captionGroupDisplay: String {
+        guard let id = clip.captionGroupId, !id.isEmpty else { return "None" }
+        return String(id.prefix(8))
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.Spacing.xxl) {
@@ -24,6 +29,10 @@ struct TextTab: View {
                 alignmentRow
                 positionSection
             }
+        }
+        .sheet(isPresented: $editingCaptionGroup) {
+            CaptionGroupEditorSheet(clip: clip)
+                .environment(editor)
         }
     }
 
@@ -51,6 +60,34 @@ struct TextTab: View {
                 RoundedRectangle(cornerRadius: AppTheme.Radius.sm)
                     .fill(Color.white.opacity(AppTheme.Opacity.hint))
             )
+            captionGroupRow
+        }
+    }
+
+    private var captionGroupRow: some View {
+        InspectorRow(
+            icon: "captions.bubble",
+            label: "Caption Group",
+            labelHelp: "Text clips with the same caption group export as SRT captions. Normal titles usually have none."
+        ) {
+            HStack(spacing: AppTheme.Spacing.sm) {
+                Text(captionGroupDisplay)
+                    .font(.system(size: AppTheme.FontSize.xs, weight: AppTheme.FontWeight.medium, design: .monospaced))
+                    .foregroundStyle(clip.captionGroupId == nil ? AppTheme.Text.tertiaryColor : AppTheme.Text.secondaryColor)
+                    .lineLimit(1)
+                    .help(clip.captionGroupId ?? "No caption group")
+                Button("Edit") { editingCaptionGroup = true }
+                    .buttonStyle(.plain)
+                    .font(.system(size: AppTheme.FontSize.xs, weight: AppTheme.FontWeight.medium))
+                    .foregroundStyle(AppTheme.Text.secondaryColor)
+                Button("Remove") {
+                    editor.commitClipProperty(clipId: clip.id) { $0.captionGroupId = nil }
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: AppTheme.FontSize.xs, weight: AppTheme.FontWeight.medium))
+                .foregroundStyle(AppTheme.Text.tertiaryColor)
+                .disabled(clip.captionGroupId == nil)
+            }
         }
     }
 
@@ -221,5 +258,52 @@ struct TextTab: View {
         InspectorRow(icon: "arrow.up.and.down.and.arrow.left.and.right", label: "Position") {
             InspectorPositionFields(clips: [clip])
         }
+    }
+}
+
+private struct CaptionGroupEditorSheet: View {
+    let clip: Clip
+    @Environment(EditorViewModel.self) private var editor
+    @Environment(\.dismiss) private var dismiss
+    @State private var value: String
+
+    init(clip: Clip) {
+        self.clip = clip
+        _value = State(initialValue: clip.captionGroupId ?? "")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.lg) {
+            Text("Caption Group")
+                .font(.system(size: AppTheme.FontSize.lg, weight: AppTheme.FontWeight.semibold))
+                .foregroundStyle(AppTheme.Text.primaryColor)
+
+            TextField("", text: $value)
+                .textFieldStyle(.plain)
+                .font(.system(size: AppTheme.FontSize.sm, design: .monospaced))
+                .padding(AppTheme.Spacing.sm)
+                .background(RoundedRectangle(cornerRadius: AppTheme.Radius.sm).fill(AppTheme.Background.raisedColor))
+                .overlay(RoundedRectangle(cornerRadius: AppTheme.Radius.sm).strokeBorder(AppTheme.Border.subtleColor, lineWidth: AppTheme.BorderWidth.thin))
+
+            Text("Leave empty to remove this clip from SRT caption export.")
+                .font(.system(size: AppTheme.FontSize.xs))
+                .foregroundStyle(AppTheme.Text.tertiaryColor)
+
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                Button("Save") {
+                    let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                    editor.commitClipProperty(clipId: clip.id) {
+                        $0.captionGroupId = trimmed.isEmpty ? nil : trimmed
+                    }
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(AppTheme.Spacing.xl)
+        .frame(width: AppTheme.ComponentSize.captionGroupEditorWidth)
+        .background(AppTheme.Background.surfaceColor)
     }
 }

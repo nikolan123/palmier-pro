@@ -1,4 +1,5 @@
 import AppKit
+import UniformTypeIdentifiers
 
 /// Window controller that handles keyboard shortcuts via the responder chain.
 /// Forwards actions to the EditorViewModel owned by VideoProject.
@@ -277,6 +278,38 @@ extension EditorWindowController: EditorActions {
         editorViewModel.showExportDialog = true
     }
 
+    @objc func importSRT(_ sender: Any?) {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [Self.srtContentType]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.title = "Import SRT"
+        panel.begin { [weak self] response in
+            guard response == .OK, let url = panel.url, let self else { return }
+            do {
+                let text = try String(contentsOf: url, encoding: .utf8)
+                let captions = try SRTCaptionCodec.parse(text)
+                let ids = self.editorViewModel.importSRTCaptions(
+                    captions,
+                    style: TextStyle(fontSize: AppTheme.Caption.defaultFontSize),
+                    center: AppTheme.Caption.defaultCenter
+                )
+                if ids.isEmpty { self.presentMessage("No captions were imported.") }
+            } catch {
+                self.presentMessage(error.localizedDescription)
+            }
+        }
+    }
+
+    @objc func exportSRTCaptionsOnly(_ sender: Any?) {
+        exportSRT(includeAllText: false)
+    }
+
+    @objc func exportSRTAllText(_ sender: Any?) {
+        exportSRT(includeAllText: true)
+    }
+
     @objc func showConsolidateProjectMedia(_ sender: Any?) {
         editorViewModel.showConsolidateDialog = true
     }
@@ -306,6 +339,41 @@ extension EditorWindowController: EditorActions {
 
     private func canHandleClipboardShortcut() -> Bool {
         editorViewModel.focusedPanel == .timeline
+    }
+
+    private static var srtContentType: UTType {
+        UTType(filenameExtension: "srt") ?? .plainText
+    }
+
+    private func exportSRT(includeAllText: Bool) {
+        let captions = editorViewModel.exportSRTCaptions(includeAllText: includeAllText)
+        guard !captions.isEmpty else {
+            presentMessage(includeAllText ? "No text to export." : "No captions to export.")
+            return
+        }
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [Self.srtContentType]
+        panel.nameFieldStringValue = (editorViewModel.projectURL?.deletingPathExtension().lastPathComponent ?? "Captions") + ".srt"
+        panel.title = "Export SRT"
+        panel.begin { [weak self] response in
+            guard response == .OK, let url = panel.url, let self else { return }
+            do {
+                try SRTCaptionCodec.encode(captions).write(to: url, atomically: true, encoding: .utf8)
+            } catch {
+                self.presentMessage(error.localizedDescription)
+            }
+        }
+    }
+
+    private func presentMessage(_ message: String) {
+        let alert = NSAlert()
+        alert.messageText = message
+        alert.addButton(withTitle: "OK")
+        if let window {
+            alert.beginSheetModal(for: window)
+        } else {
+            alert.runModal()
+        }
     }
 
     @objc func toggleMediaPanel(_ sender: Any?) { editorViewModel.mediaPanelVisible.toggle() }
@@ -350,6 +418,10 @@ extension EditorWindowController: EditorActions {
         case #selector(setLayoutVertical(_:)):
             menuItem.state = editorViewModel.layoutPreset == .vertical ? .on : .off
             return true
+        case #selector(exportSRTCaptionsOnly(_:)):
+            return !editorViewModel.exportSRTCaptions().isEmpty
+        case #selector(exportSRTAllText(_:)):
+            return !editorViewModel.exportSRTCaptions(includeAllText: true).isEmpty
         case #selector(copy(_:)), #selector(cut(_:)):
             return canHandleClipboardShortcut() && !editorViewModel.selectedClipIds.isEmpty
         case #selector(paste(_:)):
