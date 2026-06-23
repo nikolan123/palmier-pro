@@ -223,7 +223,7 @@ final class EditorSplitViewController: PaddedDividerSplitViewController {
         presetItem.minimumThickness = 400
         addSplitViewItem(presetItem)
 
-        enableAutosave(on: self, preset: preset, region: "outer")
+        splitView.autosaveName = SplitAutosave.root
     }
 
     // MARK: - Default layout

@@ -65,6 +65,10 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
     }
 
     private func handleKeyDown(_ event: NSEvent) -> Bool {
+        if handleEditorWindowShortcut(event) {
+            return true
+        }
+
         // Don't intercept keys when a text field has focus
         if isTextInputFocused {
             return false
@@ -187,6 +191,26 @@ final class EditorWindowController: NSWindowController, NSWindowDelegate {
             editorViewModel.toolMode = .pointer
             return true
 
+        default:
+            return false
+        }
+    }
+
+    private func handleEditorWindowShortcut(_ event: NSEvent) -> Bool {
+        let mods = event.modifierFlags.intersection([.command, .shift, .control, .option])
+        switch event.keyCode {
+        case 13 where mods == [.command]: // W
+            editorViewModel.closeActivePreviewTab()
+            return true
+        case 13 where mods == [.command, .shift]: // Shift-W
+            window?.performClose(nil)
+            return true
+        case 48 where mods == [.control]: // Tab
+            editorViewModel.cyclePreviewTab()
+            return true
+        case 48 where mods == [.control, .shift]: // Shift-Tab
+            editorViewModel.cyclePreviewTab(forward: false)
+            return true
         default:
             return false
         }

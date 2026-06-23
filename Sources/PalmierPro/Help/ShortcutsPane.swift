@@ -35,6 +35,8 @@ struct ShortcutsPane: View {
         ShortcutGroup(title: "File", shortcuts: [
             ("Cmd + N", "New"),
             ("Cmd + O", "Open"),
+            ("Cmd + W", "Close Preview Tab"),
+            ("Cmd + Shift + W", "Close Editor Window"),
             ("Cmd + S", "Save"),
             ("Cmd + Shift + S", "Save As"),
             ("Cmd + I", "Import Media"),
@@ -51,6 +53,8 @@ struct ShortcutsPane: View {
         ]),
         ShortcutGroup(title: "View", shortcuts: [
             ("Cmd + F", "Full Screen"),
+            ("Ctrl + Tab", "Next Preview Tab"),
+            ("Ctrl + Shift + Tab", "Previous Preview Tab"),
             ("`", "Maximize Focused Panel"),
             ("Cmd + Scroll", "Zoom Preview to Cursor"),
             ("Esc", "Deselect & Reset Tool"),

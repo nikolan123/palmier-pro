@@ -86,6 +86,18 @@ extension EditorViewModel {
         videoEngine?.activateTab(.timeline)
     }
 
+    func closeActivePreviewTab() {
+        closePreviewTab(id: activePreviewTabId)
+    }
+
+    func cyclePreviewTab(forward: Bool = true) {
+        guard previewTabs.count > 1,
+              let current = previewTabs.firstIndex(where: { $0.id == activePreviewTabId }) else { return }
+        let delta = forward ? 1 : -1
+        let next = (current + delta + previewTabs.count) % previewTabs.count
+        selectPreviewTab(id: previewTabs[next].id)
+    }
+
     private func stepPreviewHistory(_ delta: Int) {
         let next = previewTabHistoryIndex + delta
         guard previewTabHistory.indices.contains(next) else { return }
