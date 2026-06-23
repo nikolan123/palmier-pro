@@ -5,7 +5,7 @@
 **The video editor built for AI.**
 
 <a href="https://github.com/palmier-io/palmier-pro/releases/latest/download/PalmierPro.dmg">
-  <img src="./assets/macos-badge.png" alt="Download palmierpro for macOS" width="180" />
+  <img src="./assets/macos-badge.png" alt="Download Palmier Pro for macOS" width="180" />
 </a>
 
 <sub><i>Requires macOS 26 (Tahoe) on Apple Silicon</i></sub>
@@ -16,7 +16,7 @@
 
 </div>
 
-<img src="./assets/palmier-ui.png" alt="palmierpro UI" width="900" />
+<img src="./assets/palmier-ui.png" alt="Palmier Pro UI" width="900" />
 
 ---
 
@@ -75,9 +75,9 @@ The video editor (without the generative AI features) is fully open source. The 
 
 **Is it free?**
 
-The editor is free. You can download it with no login required, and use it as a video editor like CapCut or Adobe Premiere. You can also use the MCP server for free, and start experimenting using Claude Code/Desktop or Cursor to interact with your timeline editor.
+The editor is free. You can download it with no login required, and use it as a video editor like CapCut or Adobe Premiere. You can also use the MCP server locally, and start experimenting using Claude Code/Desktop or Cursor to interact with your timeline editor.
 
-Generative AI features require login and subscription.
+This fork does not include account, subscription, telemetry, or hosted generation features.
 
 **What platforms does it support?**
 

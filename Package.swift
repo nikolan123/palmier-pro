@@ -34,8 +34,10 @@ let package = Package(
                 .copy("Resources/Fonts"),
                 .copy("Resources/MCPB/palmier-pro.mcpb"),
                 .copy("Resources/Images"),
-            ]
+            ],
+            plugins: ["MetalCIKernelPlugin"]
         ),
+        .plugin(name: "MetalCIKernelPlugin", capability: .buildTool()),
         .testTarget(
             name: "PalmierProTests",
             dependencies: ["PalmierPro"],

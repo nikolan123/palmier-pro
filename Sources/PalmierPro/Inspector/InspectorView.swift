@@ -7,38 +7,19 @@ struct InspectorView: View {
     enum ClipTab: String, Hashable {
         case text = "Text"
         case video = "Video"
+        case effects = "Adjust"
         case audio = "Audio"
     }
 
     @State private var preferredTab: ClipTab = .video
     @State private var transformExpanded = true
-
-    private var headerTitle: String {
-        if selectedVisualClip != nil || selectedAudioClip != nil { return "Inspector" }
-        if selectedMediaAsset != nil { return "Source" }
-        return "Timeline"
-    }
-
-    private var headerIcon: String {
-        if selectedVisualClip != nil || selectedAudioClip != nil { return "slider.horizontal.3" }
-        return "info.circle"
-    }
+    @State var collapsedAdjustSections: Set<String> = ["Curves", "Color Wheels", "Hue Curves", "LUTs", "Effects"]
+    @State var collapsedAdjustSubgroups: Set<String> = [
+        "Detail", "Blur", "Motion Blur", "Vignette", "Film Grain", "Glow", "Chroma Key",
+    ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Plain header
-            HStack(spacing: AppTheme.Spacing.xs) {
-                Image(systemName: editor.isMarqueeSelecting ? "slider.horizontal.3" : headerIcon)
-                    .font(.system(size: AppTheme.FontSize.xs))
-                    .foregroundStyle(AppTheme.Text.tertiaryColor)
-                Text(editor.isMarqueeSelecting ? "Inspector" : headerTitle)
-                    .font(.system(size: AppTheme.FontSize.sm, weight: .medium))
-                    .foregroundStyle(AppTheme.Text.secondaryColor)
-                Spacer()
-            }
-            .padding(.horizontal, AppTheme.Spacing.lg)
-            .panelHeaderBar()
-
             if editor.isMarqueeSelecting {
                 marqueeSelectionSummary
             } else if selectedVisualClip != nil || selectedAudioClip != nil {
@@ -169,7 +150,10 @@ struct InspectorView: View {
 
         var tabs: [ClipTab] = []
         if isSingleText { tabs.append(.text) }
-        if !nonText.isEmpty { tabs.append(.video) }
+        if !nonText.isEmpty {
+            tabs.append(.video)
+            tabs.append(.effects)
+        }
         if !audios.isEmpty { tabs.append(.audio) }
         return tabs
     }
@@ -180,7 +164,7 @@ struct InspectorView: View {
         return tabs.contains(preferredTab) ? preferredTab : tabs.first
     }
 
-    private var nonTextVisualClips: [Clip] {
+    var nonTextVisualClips: [Clip] {
         selectedVisualClips.filter { $0.mediaType != .text }
     }
 
@@ -192,32 +176,40 @@ struct InspectorView: View {
                 tabBar(tabs)
             }
             Group {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.lg) {
-                        switch activeTab {
-                        case .text:
-                            if let v = selectedVisualClip, v.mediaType == .text { TextTab(clip: v) }
-                        case .video:
-                            videoTabContent()
-                        case .audio:
-                            audioTabContent()
-                        case .none:
-                            EmptyView()
+                if activeTab == .effects {
+                    ScrollView { effectsTabContent() }
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.lg) {
+                            switch activeTab {
+                            case .text:
+                                if let v = selectedVisualClip, v.mediaType == .text { TextTab(clip: v) }
+                            case .video:
+                                videoTabContent()
+                            case .audio:
+                                audioTabContent()
+                            case .effects, .none:
+                                EmptyView()
+                            }
                         }
+                        .padding(AppTheme.Spacing.lg)
                     }
-                    .padding(AppTheme.Spacing.lg)
                 }
             }
         }
     }
 
     private func tabBar(_ tabs: [ClipTab]) -> some View {
-        genericTabBar(titles: tabs.map(\.rawValue), selected: activeTab?.rawValue) { title in
+        genericTabBar(titles: tabs.map(\.rawValue), selected: activeTab?.rawValue, raisedBackground: true) { title in
             if let tab = tabs.first(where: { $0.rawValue == title }) { preferredTab = tab }
         }
     }
 
-    private func genericTabBar(titles: [String], selected: String?, onSelect: @escaping (String) -> Void) -> some View {
+    private func genericTabBar(
+        titles: [String], selected: String?,
+        raisedBackground: Bool = false,
+        onSelect: @escaping (String) -> Void
+    ) -> some View {
         HStack(spacing: AppTheme.Spacing.md) {
             ForEach(titles, id: \.self) { title in
                 let isActive = selected == title
@@ -245,6 +237,12 @@ struct InspectorView: View {
         }
         .padding(.horizontal, AppTheme.Spacing.lg)
         .padding(.top, AppTheme.Spacing.xs)
+        .background(raisedBackground ? AppTheme.Background.raisedColor : Color.clear)
+        .overlay(alignment: .bottom) {
+            if raisedBackground {
+                Rectangle().fill(AppTheme.Border.primaryColor).frame(height: AppTheme.BorderWidth.thin)
+            }
+        }
     }
 
     @ViewBuilder
@@ -275,7 +273,7 @@ struct InspectorView: View {
         keyframesToggleBar(enabled: single != nil)
     }
 
-    private func keyframesToggleBar(enabled: Bool) -> some View {
+    func keyframesToggleBar(enabled: Bool) -> some View {
         let on = editor.keyframesPanelVisible
         return HStack {
             Spacer()
@@ -301,110 +299,7 @@ struct InspectorView: View {
     }
 
     @ViewBuilder
-    private func audioTabContent() -> some View {
-        let audios = selectedAudioClips
-        let single = audios.count == 1 ? audios.first : nil
-        let kfVisible = single != nil && editor.keyframesPanelVisible
-
-        if let clip = single, kfVisible {
-            HStack(alignment: .top, spacing: 0) {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.smMd) {
-                    // Match the kf panel's ruler+strip header height so Volume aligns with its lane.
-                    sectionTitleLabel(title: "Levels")
-                        .frame(height: KeyframesMetrics.headerHeight, alignment: .bottomLeading)
-                    volumeRow(audios: audios)
-                    fadeRow(label: "Fade In", clips: audios, edge: .left)
-                        .padding(.trailing, KeyframesMetrics.controlsColumnWidth + AppTheme.Spacing.sm)
-                    fadeRow(label: "Fade Out", clips: audios, edge: .right)
-                        .padding(.trailing, KeyframesMetrics.controlsColumnWidth + AppTheme.Spacing.sm)
-                    if nonTextVisualClips.isEmpty {
-                        speedSection(clips: audios)
-                            .padding(.trailing, KeyframesMetrics.controlsColumnWidth + AppTheme.Spacing.sm)
-                            .padding(.top, AppTheme.Spacing.md)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.trailing, AppTheme.Spacing.sm)
-                Divider()
-                KeyframesPanel(clip: clip)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading, AppTheme.Spacing.sm)
-            }
-        } else {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.md) {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.smMd) {
-                    sectionTitleLabel(title: "Levels")
-                    volumeRow(audios: audios)
-                    fadeRow(label: "Fade In", clips: audios, edge: .left)
-                    fadeRow(label: "Fade Out", clips: audios, edge: .right)
-                }
-                if nonTextVisualClips.isEmpty {
-                    speedSection(clips: audios)
-                }
-            }
-        }
-
-        keyframesToggleBar(enabled: single != nil)
-    }
-
-    @ViewBuilder
-    private func volumeRow(audios: [Clip]) -> some View {
-        let single = audios.count == 1 ? audios.first : nil
-        animatableRow(label: "Volume", clipId: single?.id, property: .volume) {
-            ScrubbableNumberField(
-                value: sharedClipValue(audios) { clip in
-                    clip.liveVolumeKfDb(at: editor.activeFrame) ?? VolumeScale.dbFromLinear(clip.volume)
-                },
-                range: VolumeScale.floorDb...VolumeScale.ceilingDb,
-                format: "%.1f",
-                valueSuffix: " dB",
-                dragSensitivity: 0.3,
-                fieldWidth: 56,
-                displayTextOverride: { db in db <= VolumeScale.floorDb ? "-∞ dB" : nil },
-                onChanged: { db in
-                    for c in audios { editor.applyVolume(clipId: c.id, valueDb: db) }
-                }
-            ) { db in
-                commitToClips(audios, actionName: "Change Volume") { c in
-                    editor.commitVolume(clipId: c.id, valueDb: db)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func fadeRow(label: String, clips: [Clip], edge: FadeEdge) -> some View {
-        let fps = Double(max(1, editor.timeline.fps))
-        let single = clips.count == 1 ? clips.first : nil
-        let maxSeconds = single.map { Double($0.durationFrames) / fps } ?? 60.0
-        let actionName = edge == .left ? "Change Fade In" : "Change Fade Out"
-        propertyRow(label: label) {
-            ScrubbableNumberField(
-                value: sharedClipValue(clips) { clip in
-                    Double(clip.fadeFrames(edge)) / fps
-                },
-                range: 0...maxSeconds,
-                format: "%.2f",
-                valueSuffix: " s",
-                dragSensitivity: 0.02,
-                fieldWidth: 56,
-                onChanged: { seconds in
-                    let frames = Int((seconds * fps).rounded())
-                    for c in clips { editor.applyFade(clipId: c.id, edge: edge, frames: frames) }
-                }
-            ) { seconds in
-                let frames = Int((seconds * fps).rounded())
-                commitToClips(clips, actionName: actionName) { c in
-                    editor.commitFade(clipId: c.id, edge: edge, frames: frames)
-                }
-            }
-        }
-        .frame(height: KeyframesMetrics.rowHeight)
-    }
-
-
-    @ViewBuilder
-    private func speedSection(clips: [Clip]) -> some View {
+    func speedSection(clips: [Clip]) -> some View {
         if !clips.isEmpty {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.smMd) {
                 sectionTitleLabel(title: "Playback")
@@ -427,20 +322,11 @@ struct InspectorView: View {
         }
     }
 
-    private func commitToClips(_ clips: [Clip], actionName: String, _ commit: (Clip) -> Void) {
+    func commitToClips(_ clips: [Clip], actionName: String, _ commit: (Clip) -> Void) {
         editor.undoManager?.beginUndoGrouping()
         for c in clips { commit(c) }
         editor.undoManager?.endUndoGrouping()
         editor.undoManager?.setActionName(actionName)
-    }
-
-    private func inspectorCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content()
-            .padding(AppTheme.Spacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: AppTheme.Radius.sm)
-                    .fill(Color.white.opacity(AppTheme.Opacity.subtle))
-            )
     }
 
     // MARK: - Transform Section
@@ -475,7 +361,7 @@ struct InspectorView: View {
 
     /// Property row with an optional keyframe stamp button after the value field.
     @ViewBuilder
-    private func animatableRow<Fields: View>(
+    func animatableRow<Fields: View>(
         label: String,
         clipId: String?,
         property: AnimatableProperty,
@@ -547,7 +433,7 @@ struct InspectorView: View {
     }
 
     /// Rows sit flush-left under their uppercase section header.
-    private var sectionContentIndent: CGFloat { 0 }
+    var sectionContentIndent: CGFloat { 0 }
 
     private func transformHeader(clips: [Clip]) -> some View {
         collapsibleHeader(
@@ -661,7 +547,7 @@ struct InspectorView: View {
         }
     }
 
-    private func sectionTitleLabel(title: String) -> some View {
+    func sectionTitleLabel(title: String) -> some View {
         Text(title.uppercased())
             .font(.system(size: AppTheme.FontSize.xxs, weight: .semibold))
             .tracking(AppTheme.Tracking.wide)
@@ -669,7 +555,7 @@ struct InspectorView: View {
             .fixedSize()
     }
 
-    private func resetButton(onReset: @escaping () -> Void, help: String?) -> some View {
+    func resetButton(onReset: @escaping () -> Void, help: String?) -> some View {
         Button(action: onReset) {
             Image(systemName: "arrow.counterclockwise")
                 .font(.system(size: AppTheme.FontSize.sm))
@@ -681,7 +567,7 @@ struct InspectorView: View {
         .help(help ?? "Reset")
     }
 
-    private func propertyRow<Trailing: View>(
+    func propertyRow<Trailing: View>(
         label: String,
         @ViewBuilder trailing: () -> Trailing
     ) -> some View {
@@ -965,7 +851,7 @@ struct InspectorView: View {
         return out
     }
 
-    private var selectedAudioClips: [Clip] {
+    var selectedAudioClips: [Clip] {
         guard !editor.selectedClipIds.isEmpty else { return [] }
         var out: [Clip] = []
         for track in editor.timeline.tracks {

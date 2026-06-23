@@ -6,7 +6,7 @@ extension ToolExecutor {
     private static let importMediaAllowedKeys: Set<String> = ["source", "name", "folderId"]
     private static let importSourceAllowedKeys: Set<String> = ["path", "bytes", "mimeType"]
 
-    func importMedia(_ editor: EditorViewModel, _ args: [String: Any]) throws -> ToolResult {
+    func importMedia(_ editor: EditorViewModel, _ args: [String: Any]) async throws -> ToolResult {
         try validateUnknownKeys(args, allowed: Self.importMediaAllowedKeys, path: "import_media")
         guard let source = args["source"] as? [String: Any] else {
             throw ToolError("Missing required 'source' object")
@@ -22,7 +22,7 @@ extension ToolExecutor {
         let folderId = try resolveFolderId(args, editor: editor)
         let name = args.string("name")
         if let path {
-            return try importFromPath(editor: editor, path: path, name: name, folderId: folderId)
+            return try await importFromPath(editor: editor, path: path, name: name, folderId: folderId)
         }
         guard let bytes, let mimeType = source.string("mimeType") else {
             throw ToolError("source.mimeType is required when source.bytes is set")
@@ -36,26 +36,22 @@ extension ToolExecutor {
         )
     }
 
-    private func importFromPath(
-        editor: EditorViewModel,
-        path: String,
-        name: String?,
-        folderId: String?
-    ) throws -> ToolResult {
+    private func importFromPath(editor: EditorViewModel, path: String, name: String?, folderId: String?) async throws -> ToolResult {
         let fileURL = URL(fileURLWithPath: path)
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: fileURL.path, isDirectory: &isDirectory) else {
             throw ToolError("File not found: \(path)")
         }
         if isDirectory.boolValue {
-            let summary = editor.importFinderItems([fileURL], into: folderId)
+            let summary = await editor.importFinderItems([fileURL], into: folderId)
             guard summary.assetCount > 0 else {
                 throw ToolError("No supported media found in folder: \(path)")
             }
             return .ok("Imported \(summary.assetCount) file(s) from '\(fileURL.lastPathComponent)'.")
         }
-        guard ClipType(fileExtension: fileURL.pathExtension.lowercased()) != nil else {
-            throw ToolError("Unsupported file extension '.\(fileURL.pathExtension.lowercased())'.")
+        let ext = fileURL.pathExtension.lowercased()
+        guard ClipType(fileExtension: ext) != nil else {
+            throw ToolError("Unsupported file extension '.\(ext)'. Supported: mov/mp4/m4v, mp3/wav/aac/m4a/aiff/aifc/flac, png/jpg/jpeg/tiff/heic, json.")
         }
         guard let asset = editor.addMediaAsset(from: fileURL) else {
             throw ToolError("Failed to import file: \(path)")
@@ -99,12 +95,7 @@ extension ToolExecutor {
         return .ok("Imported '\(asset.name)' (id: \(asset.id), type: \(asset.type.rawValue)).")
     }
 
-    private func applyImportMetadata(
-        editor: EditorViewModel,
-        asset: MediaAsset,
-        name: String?,
-        folderId: String?
-    ) {
+    private func applyImportMetadata(editor: EditorViewModel, asset: MediaAsset, name: String?, folderId: String?) {
         if let name {
             asset.name = name
             if let index = editor.mediaManifest.entries.firstIndex(where: { $0.id == asset.id }) {
@@ -124,6 +115,9 @@ extension ToolExecutor {
         case "audio/wav", "audio/x-wav", "audio/wave": "wav"
         case "audio/aac": "aac"
         case "audio/mp4", "audio/m4a", "audio/x-m4a": "m4a"
+        case "audio/aiff", "audio/x-aiff": "aiff"
+        case "audio/aifc", "audio/x-aifc": "aifc"
+        case "audio/flac", "audio/x-flac": "flac"
         case "image/png": "png"
         case "image/jpeg", "image/jpg": "jpg"
         case "image/tiff": "tiff"

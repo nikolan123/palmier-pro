@@ -20,17 +20,15 @@ Not yet. This is still a very early product with a small team behind it, but we 
 
 What we don't have yet:
 
-1. Effects
-2. Transitions
-3. Color grading
-3. Masking
-4. Graphics
+1. Transitions
+2. Masking
+3. Graphics
 
 We launched it because it was enough for us to make professional AI videos. We acknowledge that without AI features, this is quite a bare-bone video editor. That's why we decided to open source it and release the video editor for free, because we want to improve the product with the community.
 
 **What's the difference between MCP server and the in-app chat?**
 
-They share the same prompt and tools. The MCP server is free to use for your MCP clients, and the in-app chat requires either BYOK or subscription. The differences are mostly the UX.
+They share the same prompt and tools. The MCP server is for local MCP clients, and the in-app chat uses the configured local/Claude integration. The differences are mostly the UX.
 
 In-app chat:
 1. You can @ to reference media, which is particularly useful when iterating on generative media. 
