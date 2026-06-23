@@ -1,4 +1,5 @@
 import AppKit
+import UniformTypeIdentifiers
 
 /// Fixed track header column drawn to the left of the scrollable timeline.
 final class TimelineHeaderView: NSView {
@@ -14,6 +15,7 @@ final class TimelineHeaderView: NSView {
     var muteButtonRects: [Int: NSRect] = [:]
     var hideButtonRects: [Int: NSRect] = [:]
     var syncLockButtonRects: [Int: NSRect] = [:]
+    var trackMenuButtonRects: [Int: NSRect] = [:]
 
     init(editor: EditorViewModel) {
         self.editor = editor
@@ -45,6 +47,7 @@ final class TimelineHeaderView: NSView {
         muteButtonRects.removeAll()
         hideButtonRects.removeAll()
         syncLockButtonRects.removeAll()
+        trackMenuButtonRects.removeAll()
         let stripWidth: CGFloat = 3
         let iconSize: CGFloat = 14
         let iconConfig = NSImage.SymbolConfiguration(pointSize: 11, weight: .regular)
@@ -70,7 +73,14 @@ final class TimelineHeaderView: NSView {
             let iconY = y + (h - iconSize) / 2
             let rightmostX = headerWidth - iconSize - 6
             let syncX = rightmostX - iconSize - 4
+            let menuX = syncX - iconSize - 4
 
+            if track.type != .audio {
+                trackMenuButtonRects[i] = drawIconButton(
+                    x: menuX, y: iconY, size: iconSize, config: iconConfig, context: ctx,
+                    symbol: "ellipsis", active: true
+                )
+            }
             syncLockButtonRects[i] = drawToggleIcon(
                 x: syncX, y: iconY, size: iconSize, config: iconConfig, context: ctx,
                 active: track.syncLocked, onSymbol: "link", offSymbol: "personalhotspot.slash"
@@ -115,6 +125,17 @@ final class TimelineHeaderView: NSView {
         let rect = NSRect(x: x, y: y, width: size, height: size)
         let tint = active ? AppTheme.Text.secondary : AppTheme.Text.secondary.withAlphaComponent(0.3)
         drawSymbol(active ? onSymbol : offSymbol, in: rect, tint: tint, config: config, context: context)
+        return rect.insetBy(dx: -4, dy: -4)
+    }
+
+    private func drawIconButton(
+        x: CGFloat, y: CGFloat, size: CGFloat,
+        config: NSImage.SymbolConfiguration, context: CGContext,
+        symbol: String, active: Bool
+    ) -> NSRect {
+        let rect = NSRect(x: x, y: y, width: size, height: size)
+        let tint = active ? AppTheme.Text.secondary : AppTheme.Text.secondary.withAlphaComponent(AppTheme.Opacity.muted)
+        drawSymbol(symbol, in: rect, tint: tint, config: config, context: context)
         return rect.insetBy(dx: -4, dy: -4)
     }
 
@@ -171,9 +192,78 @@ final class TimelineHeaderView: NSView {
                 return
             }
         }
+        for (ti, rect) in trackMenuButtonRects {
+            if rect.contains(point) {
+                showTrackMenu(trackIndex: ti, at: rect)
+                return
+            }
+        }
 
         if let ti = hitTestResizeHandle(at: point) {
             resizeDrag = (ti, editor.timeline.tracks[ti].displayHeight)
+        }
+    }
+
+    private func showTrackMenu(trackIndex: Int, at rect: NSRect) {
+        guard editor.timeline.tracks.indices.contains(trackIndex) else { return }
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+
+        let captionsOnly = NSMenuItem(title: "Export Captions as SRT…", action: #selector(exportTrackSRTCaptionsOnly(_:)), keyEquivalent: "")
+        captionsOnly.target = self
+        captionsOnly.representedObject = trackIndex
+        captionsOnly.isEnabled = !editor.exportSRTCaptions(trackIndex: trackIndex).isEmpty
+        menu.addItem(captionsOnly)
+
+        let allText = NSMenuItem(title: "Export All Text as SRT…", action: #selector(exportTrackSRTAllText(_:)), keyEquivalent: "")
+        allText.target = self
+        allText.representedObject = trackIndex
+        allText.isEnabled = !editor.exportSRTCaptions(trackIndex: trackIndex, includeAllText: true).isEmpty
+        menu.addItem(allText)
+
+        menu.popUp(positioning: nil, at: NSPoint(x: rect.minX, y: rect.maxY), in: self)
+    }
+
+    @objc private func exportTrackSRTCaptionsOnly(_ sender: NSMenuItem) {
+        guard let trackIndex = sender.representedObject as? Int else { return }
+        exportTrackSRT(trackIndex: trackIndex, includeAllText: false)
+    }
+
+    @objc private func exportTrackSRTAllText(_ sender: NSMenuItem) {
+        guard let trackIndex = sender.representedObject as? Int else { return }
+        exportTrackSRT(trackIndex: trackIndex, includeAllText: true)
+    }
+
+    private func exportTrackSRT(trackIndex: Int, includeAllText: Bool) {
+        guard editor.timeline.tracks.indices.contains(trackIndex) else { return }
+        let captions = editor.exportSRTCaptions(trackIndex: trackIndex, includeAllText: includeAllText)
+        guard !captions.isEmpty else {
+            presentMessage(includeAllText ? "No text to export." : "No captions to export.")
+            return
+        }
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [UTType(filenameExtension: "srt") ?? .plainText]
+        let projectName = editor.projectURL?.deletingPathExtension().lastPathComponent ?? "Captions"
+        panel.nameFieldStringValue = "\(projectName) \(editor.timelineTrackDisplayLabel(at: trackIndex)).srt"
+        panel.title = "Export SRT"
+        panel.begin { [weak self] response in
+            guard response == .OK, let url = panel.url, let self else { return }
+            do {
+                try SRTCaptionCodec.encode(captions).write(to: url, atomically: true, encoding: .utf8)
+            } catch {
+                self.presentMessage(error.localizedDescription)
+            }
+        }
+    }
+
+    private func presentMessage(_ message: String) {
+        let alert = NSAlert()
+        alert.messageText = message
+        alert.addButton(withTitle: "OK")
+        if let window {
+            alert.beginSheetModal(for: window)
+        } else {
+            alert.runModal()
         }
     }
 

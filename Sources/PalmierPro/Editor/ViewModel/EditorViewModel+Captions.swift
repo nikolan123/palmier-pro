@@ -136,9 +136,14 @@ extension EditorViewModel {
         return placeCaptionTrack(specs, actionName: "Import SRT")
     }
 
-    func exportSRTCaptions(includeAllText: Bool = false) -> [SRTCaption] {
-        timeline.tracks
-            .flatMap(\.clips)
+    func exportSRTCaptions(trackIndex: Int? = nil, includeAllText: Bool = false) -> [SRTCaption] {
+        let clips: [Clip]
+        if let trackIndex, timeline.tracks.indices.contains(trackIndex) {
+            clips = timeline.tracks[trackIndex].clips
+        } else {
+            clips = timeline.tracks.flatMap(\.clips)
+        }
+        return clips
             .filter { $0.mediaType == .text && (includeAllText || $0.captionGroupId != nil) }
             .sorted { $0.startFrame < $1.startFrame }
             .compactMap { clip in
